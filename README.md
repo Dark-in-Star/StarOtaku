@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="public/brand.webp" alt="Starotaku" width="320" />
-
-### Your anime and manga life, in one place.
+<img src=".github/banner.png" alt="Starotaku — Anime & Manga Tracker for MyAnimeList" width="100%" />
 
 Discover what's next, track what you're watching, and jump straight into an episode —
 all wrapped around your real MyAnimeList account.
