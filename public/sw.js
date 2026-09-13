@@ -1,4 +1,4 @@
-const OFFLINE_CACHE = "myanilist-offline-v1";
+const OFFLINE_CACHE = "anivio-offline-v1";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {

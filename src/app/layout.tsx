@@ -21,10 +21,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "MyAniList",
-    template: "%s · MyAniList",
+    default: "Anivio",
+    template: "%s · Anivio",
   },
-  description: "Browse, search, and track anime and manga using the MyAnimeList API.",
+  description: "Browse, search, stream, and track anime and manga using the MyAnimeList API.",
   icons: {
     icon: "/logo.webp",
     shortcut: "/logo.webp",
@@ -34,8 +34,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1218" },
+    { media: "(prefers-color-scheme: light)", color: "#fffaf9" },
+    { media: "(prefers-color-scheme: dark)", color: "#14100f" },
   ],
 };
 

@@ -104,10 +104,12 @@ export default function Home() {
             <h1
               className={`${heroFont.className} text-4xl font-extrabold text-white drop-shadow-lg sm:text-6xl md:text-7xl`}
             >
-              MyAniList
+              Anivio
             </h1>
-            <p className={`${heroFont.className} max-w-lg text-base font-semibold text-white/90 drop-shadow sm:text-xl md:text-2xl`}>
-              Anime &amp; Manga Tracker for MyAnimeList
+            <p
+              className={`${heroFont.className} max-w-full text-nowrap text-sm font-semibold text-white/90 drop-shadow sm:text-xl md:text-2xl`}
+            >
+              Track, Browse, and Stream Anime &amp; Manga
             </p>
             <div className="w-full max-w-md my-8">
               <SearchBar className="border-accent bg-white/15 text-white shadow-lg shadow-black/30 ring-1 ring-white/20 backdrop-blur-md placeholder:text-white/70 focus-visible:border-accent focus-visible:ring-accent/40 dark:border-accent dark:bg-white/15 dark:text-white dark:placeholder:text-white/70 dark:shadow-black/40" />

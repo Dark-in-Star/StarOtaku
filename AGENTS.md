@@ -8,12 +8,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# MyAniList Web — Agent Guide
+# Anivio Web — Agent Guide
 
 ## What this is
 
-A Next.js (App Router, TypeScript) client for browsing, searching, and tracking anime/manga
-through the official MyAnimeList API v2. See `README.md` for the user-facing feature list,
+A Next.js (App Router, TypeScript) client for browsing, searching, streaming, and tracking
+anime/manga through the official MyAnimeList API v2. See `README.md` for the user-facing feature list,
 screenshots, and tech-stack table — this file is for agents working *in* the codebase.
 
 **There is no separate backend.** `src/lib/api.ts` and `src/lib/actions.ts` call

@@ -1,7 +1,7 @@
 # MAL API: direct integration
 
 This app used to route all MyAnimeList data calls through a separate companion server,
-`myanilist-server` (a stateless Hono wrapper on port 3000). That server has been retired —
+`anivio-server` (a stateless Hono wrapper on port 3000). That server has been retired —
 its entire job was injecting one of two headers and forwarding the request, which this app's
 own server-side code can do itself with zero added infrastructure.
 

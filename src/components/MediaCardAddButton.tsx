@@ -22,9 +22,9 @@ import type {
 // Each list status gets its own icon *and* colour: colour alone would be invisible to a
 // colour-blind visitor, and over a poster thumbnail it can't be relied on for contrast either.
 const STATUS_STYLES: Record<MyListEntryStatus, { icon: typeof Check; className: string }> = {
-  watching: { icon: Play, className: "border-score/60 bg-score text-black" },
-  reading: { icon: Play, className: "border-score/60 bg-score text-black" },
-  completed: { icon: Check, className: "border-accent/60 bg-accent text-accent-foreground" },
+  watching: { icon: Play, className: "border-accent/60 bg-accent text-accent-foreground" },
+  reading: { icon: Play, className: "border-accent/60 bg-accent text-accent-foreground" },
+  completed: { icon: Check, className: "border-score/60 bg-score text-black" },
   on_hold: { icon: Pause, className: "border-amber-300/60 bg-amber-500 text-black" },
   dropped: { icon: X, className: "border-danger/60 bg-danger text-white" },
   plan_to_watch: { icon: Clock, className: "border-white/40 bg-slate-600 text-white" },

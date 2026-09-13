@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src=".github/assets/screenshots/banner.jpg" alt="MyAniList — Anime & Manga Tracker for MyAnimeList" width="100%" />
+<img src=".github/assets/screenshots/banner.jpg" alt="Anivio — Track, Browse, and Stream Anime & Manga" width="100%" />
 
-Browse rankings, search, and manage your list — no separate backend, no exposed API, just Next.js talking to MAL directly from the server.
+Browse rankings, search, stream, and manage your list — no separate backend, no exposed API, just Next.js talking to MAL directly from the server.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev)
@@ -11,9 +11,9 @@ Browse rankings, search, and manage your list — no separate backend, no expose
 [![Vitest](https://img.shields.io/badge/Vitest-unit%20tests-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev)
 [![Playwright](https://img.shields.io/badge/Playwright-e2e-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev)
 [![MyAnimeList API](https://img.shields.io/badge/MyAnimeList-API%20v2-2E51A2?logo=myanimelist&logoColor=white)](https://myanimelist.net/apiconfig/references/api/v2)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-myanilist.vercel.app-000000?logo=vercel&logoColor=white)](https://myanilist.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-anivio.vercel.app-000000?logo=vercel&logoColor=white)](https://anivio.vercel.app/)
 
-[Live Demo](https://myanilist.vercel.app/) · [Screenshots](#screenshots) · [Features](#features) · [Tech Stack](#tech-stack) · [Architecture](#architecture) · [Getting Started](#getting-started) · [Android App](#android-app-trusted-web-activity)
+[Live Demo](https://anivio.vercel.app/) · [Screenshots](#screenshots) · [Features](#features) · [Tech Stack](#tech-stack) · [Architecture](#architecture) · [Getting Started](#getting-started) · [Android App](#android-app-trusted-web-activity)
 
 </div>
 
@@ -148,7 +148,7 @@ android/            # Trusted Web Activity (TWA) project — wraps the live site
 
 ## Android App (Trusted Web Activity)
 
-MyAniList ships as a real Android app via a [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity/) (TWA) — Chrome renders the actual production site (`https://myanilist.vercel.app/`) full-screen inside a thin native wrapper (`android/`, using [`androidbrowserhelper`](https://github.com/GoogleChrome/android-browser-helper)). It is **not** a WebView wrapper and does **not** bundle a copy of the app — the Android project has no business logic of its own, so the site keeps working (and updating) exactly as it does in a browser.
+Anivio ships as a real Android app via a [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity/) (TWA) — Chrome renders the actual production site (`https://anivio.vercel.app/`) full-screen inside a thin native wrapper (`android/`, using [`androidbrowserhelper`](https://github.com/GoogleChrome/android-browser-helper)). It is **not** a WebView wrapper and does **not** bundle a copy of the app — the Android project has no business logic of its own, so the site keeps working (and updating) exactly as it does in a browser.
 
 ### A. Required tools
 
@@ -158,8 +158,8 @@ MyAniList ships as a real Android app via a [Trusted Web Activity](https://devel
 
 ### B. Package / application ID
 
-- Package ID: **`to.myanilist.app`** (set in `android/app/build.gradle`'s `namespace`/`applicationId`, `android/twa-manifest.json`, and `public/.well-known/assetlinks.json`). Keep all three in sync if you ever change it.
-- App name: **MyAniList** (`android/app/src/main/res/values/strings.xml`).
+- Package ID: **`to.myanilist.app`** (set in `android/app/build.gradle`'s `namespace`/`applicationId`, `android/twa-manifest.json`, and `public/.well-known/assetlinks.json`). Keep all three in sync if you ever change it. Kept as-is from this project's original name despite the app-facing rebrand to Anivio — changing it would create a new Play Store listing rather than updating the existing one.
+- App name: **Anivio** (`android/app/src/main/res/values/strings.xml`).
 
 ### C. Create the release signing key
 
@@ -170,6 +170,11 @@ keytool -genkeypair -v -storetype PKCS12 \
   -keystore android/release.jks \
   -alias myanilist \
   -keyalg RSA -keysize 2048 -validity 10000
+```
+
+The alias stays `myanilist` (this project's original name) even after the app-facing rebrand to Anivio — it's just a local keystore label, not user-visible, and renaming it would require re-signing.
+
+```bash
 ```
 
 You'll be prompted for a store password, a key password, and your identity details — pick a strong password and **store it somewhere safe** (a password manager). Losing this file or its password means you can never publish an update to the same Play Store listing again.
@@ -205,8 +210,8 @@ Already scaffolded at `public/.well-known/assetlinks.json` with the correct pack
 It's a normal static file under `public/`, so it ships automatically with every deploy — no extra Vercel configuration needed. After deploying, confirm:
 
 ```bash
-curl -i https://myanilist.vercel.app/.well-known/assetlinks.json
-curl -i https://myanilist.vercel.app/manifest.webmanifest
+curl -i https://anivio.vercel.app/.well-known/assetlinks.json
+curl -i https://anivio.vercel.app/manifest.webmanifest
 ```
 
 Both should return `200` (verified locally against a production build — `pnpm build && pnpm start` — before this was ever pushed).
@@ -233,7 +238,7 @@ Output: `android/app/build/outputs/bundle/release/app-release.aab`. Requires `an
 
 ### K. Upload to Google Play Console
 
-1. [Create an app](https://play.google.com/console) if you haven't already, using the same package ID (`to.myanilist.app`).
+1. [Create an app](https://play.google.com/console) if you haven't already, using the same package ID (`to.myanilist.app`) — Anivio is the display name; the package ID stays as originally registered.
 2. *Release → Production* (or a testing track first) → **Create new release** → upload `app-release.aab`.
 3. Enable **Play App Signing** when prompted (recommended).
 4. Fill in the store listing — you'll need a **512×512 icon** (`android/store-icon-512.png`, generated by `pnpm generate:icons`), a **1024×500 feature graphic**, and **phone screenshots** (not generated here — capture these from a device/emulator; they're marketing assets, out of scope for this change).
@@ -251,7 +256,7 @@ All of the above are already covered by `.gitignore` / `android/.gitignore` — 
 
 ### What's already handled
 
-- **Splash screen** matches system light/dark mode with no white flash: the manifest's `background_color`/`theme_color` and the native Android splash (`values/colors.xml` + `values-night/colors.xml`, referenced from `AndroidManifest.xml`'s `SPLASH_SCREEN_BACKGROUND_COLOR`/`SPLASH_IMAGE_DRAWABLE` meta-data) both resolve to `#0f1218` in dark and `#ffffff` in light, matching the site's own theme (`src/app/globals.css`). The Activity's own theme (`Theme.Launcher` in `values/styles.xml`) sets `windowBackground` to the same color, so even the very first frame Android paints — before any library code runs — is correct.
+- **Splash screen** matches system light/dark mode with no white flash: the manifest's `background_color`/`theme_color` and the native Android splash (`values/colors.xml` + `values-night/colors.xml`, referenced from `AndroidManifest.xml`'s `SPLASH_SCREEN_BACKGROUND_COLOR`/`SPLASH_IMAGE_DRAWABLE` meta-data) both resolve to `#14100f` in dark and `#fffaf9` in light, matching the site's own theme (`src/app/globals.css`). The Activity's own theme (`Theme.Launcher` in `values/styles.xml`) sets `windowBackground` to the same color, so even the very first frame Android paints — before any library code runs — is correct.
 - **Back navigation, internal/external links, video** — all default Chrome/TWA behavior, unchanged: back navigates through the site's own history before exiting the app; the existing `target="_blank"` links (e.g. the MyAnimeList link on anime detail pages, streaming provider links on `/anime/[id]/watch`) already escape the verified origin into a normal browser tab; the trailer's YouTube iframe and its fullscreen/orientation handling are Chrome's, not the wrapper's.
 - **Auth, cookies, storage** — untouched. OAuth (MAL) redirects work the same as in a normal browser tab since the TWA *is* Chrome for the verified origin.
 - **Offline** — `public/sw.js` is a minimal service worker that only intercepts failed navigation requests and serves a static, theme-matched `public/offline.html`; it does not cache API responses, auth pages, or any user data.
@@ -259,5 +264,5 @@ All of the above are already covered by `.gitignore` / `android/.gitignore` — 
 ---
 
 <div align="center">
-<sub>Anime and manga data © <a href="https://myanimelist.net">MyAnimeList</a>. This project is an unofficial client and is not affiliated with MyAnimeList.</sub>
+<sub>Anivio is an unofficial client. Anime and manga data © <a href="https://myanimelist.net">MyAnimeList</a>. Not affiliated with MyAnimeList.</sub>
 </div>

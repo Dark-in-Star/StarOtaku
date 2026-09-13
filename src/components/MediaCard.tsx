@@ -70,7 +70,7 @@ export function MediaCard({
             #{rank}
           </span>
         )}
-        <span className="absolute right-2 top-2 rounded-lg bg-green-700 px-2 py-0.5 text-xs font-bold text-accent-foreground shadow-sm">
+        <span className="absolute right-2 top-2 rounded-lg bg-surface/90 px-2 py-0.5 text-xs font-bold text-foreground shadow-sm">
           {subtitle ?? formatMediaType(mediaType)}
         </span>
         <div className="absolute bottom-2 left-2">

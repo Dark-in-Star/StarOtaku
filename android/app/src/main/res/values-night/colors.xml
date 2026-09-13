@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Only the splash background needs a night override — see values/colors.xml. -->
-    <color name="splashScreenBackground">#FF0F1218</color>
+    <color name="splashScreenBackground">#FF14100F</color>
 </resources>

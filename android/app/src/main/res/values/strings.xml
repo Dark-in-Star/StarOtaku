@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MyAniList</string>
-    <string name="launcher_name">MyAniList</string>
+    <string name="app_name">Anivio</string>
+    <string name="launcher_name">Anivio</string>
 
     <!-- Digital Asset Links statement declaring this app's association with the site.
          Complements (does not replace) public/.well-known/assetlinks.json, which is what
          Android actually fetches over HTTPS to verify the relationship. -->
     <string name="assetStatements" translatable="false">
-        [{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://myanilist.vercel.app\"}}]
+        [{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://anivio.vercel.app\"}}]
     </string>
 </resources>

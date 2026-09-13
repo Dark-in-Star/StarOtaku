@@ -29,7 +29,7 @@ globalThis.ImageData = class ImageData {
 const REPO_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SOURCE_LOGO = `${REPO_ROOT}public/logo.webp`;
 
-const DARK_BG = [0x0f, 0x12, 0x18, 0xff];
+const DARK_BG = [0x14, 0x10, 0x0f, 0xff];
 const LIGHT_BG = [0xff, 0xff, 0xff, 0xff];
 const TRANSPARENT = [0, 0, 0, 0];
 

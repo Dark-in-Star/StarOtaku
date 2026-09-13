@@ -3,15 +3,15 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "MyAniList",
-    short_name: "MyAniList",
-    description: "Browse, search, and track anime and manga using the MyAnimeList API.",
+    name: "Anivio",
+    short_name: "Anivio",
+    description: "Browse, search, stream, and track anime and manga using the MyAnimeList API.",
     start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#0f1218",
-    theme_color: "#0f1218",
+    background_color: "#14100f",
+    theme_color: "#14100f",
     icons: [
       {
         src: "/icons/icon-192.png",

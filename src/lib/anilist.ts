@@ -9,7 +9,7 @@ const ANILIST_API_URL = "https://graphql.anilist.co";
 const ANILIST_HEADERS = {
   "Content-Type": "application/json",
   Accept: "application/json",
-  "User-Agent": "MyAniList/1.0 (+https://myanilist.vercel.app)",
+  "User-Agent": "Anivio/1.0 (+https://anivio.vercel.app)",
 } as const;
 
 const NEXT_AIRING_EPISODE_QUERY = `
