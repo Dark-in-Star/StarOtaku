@@ -1,6 +1,6 @@
 <div align="center">
 
-# Anivio
+<img src="public/brand.webp" alt="Anivio" width="320" />
 
 Browse rankings, search, stream, and manage your list — no separate backend, no exposed API, just Next.js talking to MAL directly from the server.
 
