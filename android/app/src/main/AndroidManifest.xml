@@ -11,7 +11,7 @@
         android:supportsRtl="true">
 
         <!-- Digital Asset Links statement declaring this app's association with the site.
-             Android independently verifies this against https://anivio.vercel.app/.well-known/assetlinks.json. -->
+             Android independently verifies this against https://starotaku.vercel.app/.well-known/assetlinks.json. -->
         <meta-data
             android:name="asset_statements"
             android:resource="@string/assetStatements" />
@@ -25,7 +25,7 @@
 
             <meta-data
                 android:name="android.support.customtabs.trusted.DEFAULT_URL"
-                android:value="https://anivio.vercel.app/" />
+                android:value="https://starotaku.vercel.app/" />
 
             <meta-data
                 android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
@@ -76,7 +76,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Digital Asset Links-verified deep link: lets anivio.vercel.app links
+            <!-- Digital Asset Links-verified deep link: lets starotaku.vercel.app links
                  (e.g. from the OAuth callback, or tapping a shared link) open directly in
                  this app instead of the browser, and keeps Android back navigation working
                  through the site's own history. -->
@@ -86,7 +86,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
-                    android:host="anivio.vercel.app" />
+                    android:host="starotaku.vercel.app" />
             </intent-filter>
         </activity>
 

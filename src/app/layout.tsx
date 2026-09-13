@@ -21,8 +21,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Anivio",
-    template: "%s · Anivio",
+    default: "Starotaku",
+    template: "%s · Starotaku",
   },
   description: "Browse, search, stream, and track anime and manga using the MyAnimeList API.",
   icons: {

@@ -1,25 +1,25 @@
 <div align="center">
 
-<img src="public/brand.webp" alt="Anivio" width="320" />
+<img src="public/brand.webp" alt="Starotaku" width="320" />
 
 ### Your anime and manga life, in one place.
 
 Discover what's next, track what you're watching, and jump straight into an episode —
 all wrapped around your real MyAnimeList account.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-anivio.vercel.app-b91c1c?logo=vercel&logoColor=white)](https://anivio.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-starotaku.vercel.app-b91c1c?logo=vercel&logoColor=white)](https://starotaku.vercel.app/)
 [![MyAnimeList API](https://img.shields.io/badge/Powered%20by-MyAnimeList-2E51A2?logo=myanimelist&logoColor=white)](https://myanimelist.net/apiconfig/references/api/v2)
 
-[Try it now](https://anivio.vercel.app/) · [Features](#features) · [Get Started](#getting-started) · [Android App](#android-app-trusted-web-activity)
+[Try it now](https://starotaku.vercel.app/) · [Features](#features) · [Get Started](#getting-started) · [Android App](#android-app-trusted-web-activity)
 
 </div>
 
 ---
 
-## Why Anivio
+## Why Starotaku
 
 Most anime trackers make you choose: a clean list manager with no discovery, or a discovery
-site that can't touch your list. Anivio does both, on top of the account you already have on
+site that can't touch your list. Starotaku does both, on top of the account you already have on
 MyAnimeList — no new sign-up, no second source of truth, no data silo.
 
 ## Features
@@ -45,7 +45,7 @@ MyAnimeList — no new sign-up, no second source of truth, no data silo.
 
 ### 🔐 Actually yours
 - Sign in with your real MyAnimeList account (OAuth2) — every visitor gets their own session,
-  never a shared login, and Anivio never sees your password
+  never a shared login, and Starotaku never sees your password
 
 ### 🎨 Built to feel native
 - Light and dark themes
@@ -83,7 +83,7 @@ with Tailwind CSS v4 and Radix UI, talking directly to the [MyAnimeList API v2](
 
 ## Android App (Trusted Web Activity)
 
-Anivio ships as a real Android app via a [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity/) (TWA) — Chrome renders the actual production site (`https://anivio.vercel.app/`) full-screen inside a thin native wrapper (`android/`, using [`androidbrowserhelper`](https://github.com/GoogleChrome/android-browser-helper)). It is **not** a WebView wrapper and does **not** bundle a copy of the app — the Android project has no business logic of its own, so the site keeps working (and updating) exactly as it does in a browser.
+Starotaku ships as a real Android app via a [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity/) (TWA) — Chrome renders the actual production site (`https://starotaku.vercel.app/`) full-screen inside a thin native wrapper (`android/`, using [`androidbrowserhelper`](https://github.com/GoogleChrome/android-browser-helper)). It is **not** a WebView wrapper and does **not** bundle a copy of the app — the Android project has no business logic of its own, so the site keeps working (and updating) exactly as it does in a browser.
 
 ### A. Required tools
 
@@ -93,8 +93,8 @@ Anivio ships as a real Android app via a [Trusted Web Activity](https://develope
 
 ### B. Package / application ID
 
-- Package ID: **`to.myanilist.app`** (set in `android/app/build.gradle`'s `namespace`/`applicationId`, `android/twa-manifest.json`, and `public/.well-known/assetlinks.json`). Keep all three in sync if you ever change it. Kept as-is from this project's original name despite the app-facing rebrand to Anivio — changing it would create a new Play Store listing rather than updating the existing one.
-- App name: **Anivio** (`android/app/src/main/res/values/strings.xml`).
+- Package ID: **`to.myanilist.app`** (set in `android/app/build.gradle`'s `namespace`/`applicationId`, `android/twa-manifest.json`, and `public/.well-known/assetlinks.json`). Keep all three in sync if you ever change it. Kept as-is from this project's original name despite the app-facing rebrands (first to Anivio, now to Starotaku) — changing it would create a new Play Store listing rather than updating the existing one.
+- App name: **Starotaku** (`android/app/src/main/res/values/strings.xml`).
 
 ### C. Create the release signing key
 
@@ -107,7 +107,7 @@ keytool -genkeypair -v -storetype PKCS12 \
   -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-The alias stays `myanilist` (this project's original name) even after the app-facing rebrand to Anivio — it's just a local keystore label, not user-visible, and renaming it would require re-signing.
+The alias stays `myanilist` (this project's original name) even after the app-facing rebrands (first to Anivio, now to Starotaku) — it's just a local keystore label, not user-visible, and renaming it would require re-signing.
 
 ```bash
 ```
@@ -145,8 +145,8 @@ Already scaffolded at `public/.well-known/assetlinks.json` with the correct pack
 It's a normal static file under `public/`, so it ships automatically with every deploy — no extra Vercel configuration needed. After deploying, confirm:
 
 ```bash
-curl -i https://anivio.vercel.app/.well-known/assetlinks.json
-curl -i https://anivio.vercel.app/manifest.webmanifest
+curl -i https://starotaku.vercel.app/.well-known/assetlinks.json
+curl -i https://starotaku.vercel.app/manifest.webmanifest
 ```
 
 Both should return `200` (verified locally against a production build — `pnpm build && pnpm start` — before this was ever pushed).
@@ -173,7 +173,7 @@ Output: `android/app/build/outputs/bundle/release/app-release.aab`. Requires `an
 
 ### K. Upload to Google Play Console
 
-1. [Create an app](https://play.google.com/console) if you haven't already, using the same package ID (`to.myanilist.app`) — Anivio is the display name; the package ID stays as originally registered.
+1. [Create an app](https://play.google.com/console) if you haven't already, using the same package ID (`to.myanilist.app`) — Starotaku is the display name; the package ID stays as originally registered.
 2. *Release → Production* (or a testing track first) → **Create new release** → upload `app-release.aab`.
 3. Enable **Play App Signing** when prompted (recommended).
 4. Fill in the store listing — you'll need a **512×512 icon** (`android/store-icon-512.png`, generated by `pnpm generate:icons`), a **1024×500 feature graphic**, and **phone screenshots** (not generated here — capture these from a device/emulator; they're marketing assets, out of scope for this change).
@@ -199,5 +199,5 @@ All of the above are already covered by `.gitignore` / `android/.gitignore` — 
 ---
 
 <div align="center">
-<sub>Anivio is an unofficial client. Anime and manga data © <a href="https://myanimelist.net">MyAnimeList</a>. Not affiliated with MyAnimeList.</sub>
+<sub>Starotaku is an unofficial client. Anime and manga data © <a href="https://myanimelist.net">MyAnimeList</a>. Not affiliated with MyAnimeList.</sub>
 </div>

@@ -104,7 +104,7 @@ export default function Home() {
             <h1
               className={`${heroFont.className} text-4xl font-extrabold text-white drop-shadow-lg sm:text-6xl md:text-7xl`}
             >
-              Anivio
+              Starotaku
             </h1>
             <p
               className={`${heroFont.className} max-w-full text-nowrap text-sm font-semibold text-white/90 drop-shadow sm:text-xl md:text-2xl`}

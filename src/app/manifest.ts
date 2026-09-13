@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Anivio",
-    short_name: "Anivio",
+    name: "Starotaku",
+    short_name: "Starotaku",
     description: "Browse, search, stream, and track anime and manga using the MyAnimeList API.",
     start_url: "/",
     scope: "/",
