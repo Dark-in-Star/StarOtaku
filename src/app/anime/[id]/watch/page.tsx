@@ -6,6 +6,7 @@ import { ArrowLeft, ExternalLink, Tv } from "lucide-react";
 import { ApiError, getAnime } from "@/lib/api";
 import { getAnimeExtras, getNextAiringEpisode } from "@/lib/anilist";
 import { airedEpisodeCount } from "@/lib/airedEpisodes";
+import { getSession } from "@/lib/session";
 import { WatchHerePlayer } from "@/components/WatchHerePlayer";
 
 async function loadAnime(id: number) {
@@ -29,10 +30,11 @@ export async function generateMetadata({
 
 export default async function WatchAnimePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [anime, extras, schedule] = await Promise.all([
+  const [anime, extras, schedule, session] = await Promise.all([
     loadAnime(Number(id)),
     getAnimeExtras(Number(id)),
     getNextAiringEpisode(Number(id)),
+    getSession(),
   ]);
   const streamingLinks = extras?.streamingLinks ?? [];
   // `num_episodes` is the planned total, so an airing show would otherwise list episodes
@@ -69,8 +71,11 @@ export default async function WatchAnimePage({ params }: { params: Promise<{ id:
       <WatchHerePlayer
         malId={anime.id}
         episodeCount={episodeCount}
+        totalEpisodes={anime.num_episodes || undefined}
         upcomingEpisode={schedule?.episode}
         airingAt={schedule?.airingAt}
+        isAuthenticated={Boolean(session)}
+        listStatus={anime.my_list_status}
       />
 
       <div className="flex flex-col gap-3">
