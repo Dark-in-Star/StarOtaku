@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=".github/assets/screenshots/banner.jpg" alt="Anivio — Track, Browse, and Stream Anime & Manga" width="100%" />
+# Anivio
 
 Browse rankings, search, stream, and manage your list — no separate backend, no exposed API, just Next.js talking to MAL directly from the server.
 
@@ -13,40 +13,11 @@ Browse rankings, search, stream, and manage your list — no separate backend, n
 [![MyAnimeList API](https://img.shields.io/badge/MyAnimeList-API%20v2-2E51A2?logo=myanimelist&logoColor=white)](https://myanimelist.net/apiconfig/references/api/v2)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-anivio.vercel.app-000000?logo=vercel&logoColor=white)](https://anivio.vercel.app/)
 
-[Live Demo](https://anivio.vercel.app/) · [Screenshots](#screenshots) · [Features](#features) · [Tech Stack](#tech-stack) · [Architecture](#architecture) · [Getting Started](#getting-started) · [Android App](#android-app-trusted-web-activity)
+[Live Demo](https://anivio.vercel.app/) · [Features](#features) · [Tech Stack](#tech-stack) · [Architecture](#architecture) · [Getting Started](#getting-started) · [Android App](#android-app-trusted-web-activity)
 
 </div>
 
 ---
-
-## Screenshots
-
-<table>
-<tr>
-<td align="center" width="33%"><img src=".github/assets/screenshots/mobile-home.jpg" alt="Home, mobile dark mode" /><br /><sub>Home</sub></td>
-<td align="center" width="33%"><img src=".github/assets/screenshots/mobile-browse.jpg" alt="Anime rankings, mobile dark mode" /><br /><sub>Browse — Rankings</sub></td>
-<td align="center" width="33%"><img src=".github/assets/screenshots/mobile-search.jpg" alt="Search results, mobile dark mode" /><br /><sub>Browse — Search</sub></td>
-</tr>
-<tr>
-<td align="center" width="33%"><img src=".github/assets/screenshots/mobile-anime-detail.jpg" alt="Anime detail page, mobile dark mode" /><br /><sub>Anime Detail</sub></td>
-<td align="center" width="33%"><img src=".github/assets/screenshots/mobile-archive.jpg" alt="Seasonal archive, mobile dark mode" /><br /><sub>Seasonal Archive</sub></td>
-<td align="center" width="33%"><img src=".github/assets/screenshots/mobile-manga-browse.jpg" alt="Manga rankings, mobile dark mode" /><br /><sub>Manga Rankings</sub></td>
-</tr>
-<tr>
-<td align="center" width="33%"><img src=".github/assets/screenshots/mobile-mylist.jpg" alt="My Anime List, mobile dark mode" /><br /><sub>My List</sub></td>
-<td align="center" width="33%"><img src=".github/assets/screenshots/mobile-mylist-filter.jpg" alt="My List filter modal, mobile dark mode" /><br /><sub>My List — Filters</sub></td>
-</tr>
-</table>
-
-<details>
-<summary><b>Desktop</b></summary>
-<br />
-
-<img src=".github/assets/screenshots/desktop-home.jpg" alt="Home page, desktop dark mode" />
-<br /><br />
-<img src=".github/assets/screenshots/desktop-browse.jpg" alt="Anime rankings, desktop dark mode" />
-
-</details>
 
 ## Features
 
