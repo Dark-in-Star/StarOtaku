@@ -2,18 +2,18 @@
 <resources>
     <!-- Fixed light/dark pairs, each referenced by its own explicit
          *_COLOR / *_COLOR_DARK meta-data key in AndroidManifest.xml. -->
-    <color name="statusBarColorLight">#FFFFFAF9</color>
-    <color name="statusBarColorDark">#FF14100F</color>
-    <color name="navigationBarColorLight">#FFFFFAF9</color>
-    <color name="navigationBarColorDark">#FF14100F</color>
-    <color name="navigationBarDividerColorLight">#FFFFFAF9</color>
-    <color name="navigationBarDividerColorDark">#FF14100F</color>
+    <color name="statusBarColorLight">#FFFFF9F9</color>
+    <color name="statusBarColorDark">#FF140F0F</color>
+    <color name="navigationBarColorLight">#FFFFF9F9</color>
+    <color name="navigationBarColorDark">#FF140F0F</color>
+    <color name="navigationBarDividerColorLight">#FFFFF9F9</color>
+    <color name="navigationBarDividerColorDark">#FF140F0F</color>
 
     <!-- androidbrowserhelper has no *_DARK meta-data key for the splash screen, so this
          name is instead overridden via values-night/colors.xml to pick up system dark mode. -->
-    <color name="splashScreenBackground">#FFFFFAF9</color>
+    <color name="splashScreenBackground">#FFFFF9F9</color>
 
     <!-- Adaptive launcher icon background — not day/night qualified; Android doesn't
          re-theme the home-screen icon by system theme. -->
-    <color name="icLauncherBackground">#FF14100F</color>
+    <color name="icLauncherBackground">#FF140F0F</color>
 </resources>

@@ -4,21 +4,23 @@
 
 @custom-variant dark (&:is([data-theme="dark"], [data-theme="dark"] *));
 
+/* --accent is sampled from the app icon's plate (#c42020); the tinted neutrals sit
+   on that same hue so the chrome reads as one family with the mark. */
 :root {
-  --surface: #1e1516;
+  --surface: #1e1515;
   --surface-muted: #271a1a;
-  --muted: #b0a09e;
-  --border: #3a2624;
-  --accent: #e24646;
-  --accent-foreground: #180c0b;
-  --accent-soft: #3d2220;
+  --muted: #b09e9e;
+  --border: #3a2424;
+  --accent: #c42020;
+  --accent-foreground: #180b0b;
+  --accent-soft: #3d2020;
   --score: #4ad080;
-  --danger: #ef6a61;
-  --danger-soft: #3a2020;
+  --danger: #ef6161;
+  --danger-soft: #3a1f1f;
   --overlay: rgb(0 0 0 / 60%);
   --overlay-foreground: #ffffff;
-  --background: #14100f;
-  --foreground: #f8eeed;
+  --background: #140f0f;
+  --foreground: #f8eded;
   --card: var(--surface);
   --card-foreground: var(--foreground);
   --popover: var(--surface);
@@ -48,17 +50,17 @@
 }
 
 :root[data-theme="light"] {
-  --background: #fffaf9;
+  --background: #fff9f9;
   --surface: #ffffff;
-  --surface-muted: #fbeeec;
+  --surface-muted: #fbecec;
   --foreground: oklch(0.145 0 0);
-  --muted: #7a6664;
-  --border: #f0ddda;
-  --accent: #b91d1d;
+  --muted: #7a6464;
+  --border: #f0dada;
+  --accent: #b11b1b;
   --accent-foreground: #ffffff;
-  --accent-soft: #fbe6e3;
+  --accent-soft: #fbe3e3;
   --score: #2e9e5b;
-  --danger: #d1453b;
+  --danger: #d13b3b;
   --danger-soft: #fbeaea;
 }
 
@@ -117,7 +119,7 @@
 body {
   background:
     radial-gradient(1200px 480px at 15% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent),
-    radial-gradient(900px 420px at 100% 0%, color-mix(in srgb, var(--score) 6%, transparent), transparent),
+    radial-gradient(900px 420px at 100% 0%, color-mix(in srgb, var(--accent) 5%, transparent), transparent),
     var(--background);
   background-attachment: fixed;
   transition: background-color 0.2s ease, color 0.2s ease;
