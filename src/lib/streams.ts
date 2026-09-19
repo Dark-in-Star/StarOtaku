@@ -1,6 +1,7 @@
 import "server-only";
 import { getAniListId } from "./anilist";
 import type { StreamServer, StreamSources } from "./types";
+import { base64ToString } from "./utils";
 
 /**
  * Signals that the upstream was unreachable or misbehaving, as distinct from an episode
@@ -28,7 +29,7 @@ const FLIX_USER_AGENT =
 //
 // Deliberately second: it is a free third-party service with no availability guarantee,
 // so the direct call is always tried first and this runs only when that is blocked.
-const READER_PROXY_BASE_URL = process.env.STREAM_READER_URL ?? "https://r.jina.ai/";
+const READER_PROXY_BASE_URL = base64ToString(process.env.STREAM_READER_URL) ?? "https://r.jina.ai/";
 
 const FLIX_TIMEOUT_MS = 10_000;
 // The extra hop makes the reader materially slower than a direct hit.
