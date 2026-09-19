@@ -43,7 +43,7 @@ export function NavBar({
             isMyList && "max-sm:absolute max-sm:left-1/2 max-sm:top-1/2 max-sm:-translate-x-1/2 max-sm:-translate-y-1/2",
           )}
         >
-          <Image src="/brand.webp" alt="Starotaku" width={707} height={353} priority className="h-10 w-auto sm:h-12" />
+          <Image src="/brand.webp" alt="Starotaku" width={787} height={209} priority className="h-10 w-auto sm:h-12" />
         </Link>
 
         <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex">

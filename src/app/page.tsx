@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { Poppins } from "next/font/google";
 import { Suspense } from "react";
 import { getAnimeRanking, getMangaRanking } from "@/lib/api";
 import { MediaCard } from "@/components/MediaCard";
@@ -7,8 +6,6 @@ import { MediaRow, MediaRowItem } from "@/components/MediaRow";
 import { RowSkeleton } from "@/components/RowSkeleton";
 import { SearchBar } from "@/components/SearchBar";
 import type { AnimeRankingType, MangaRankingType } from "@/lib/types";
-
-const heroFont = Poppins({ subsets: ["latin"], weight: ["600", "800"] });
 
 async function AnimeRankingRow({
   title,
@@ -93,24 +90,15 @@ export default function Home() {
           />
           <div className="absolute inset-0 bg-black/55" />
           <div className="absolute inset-x-0 top-[25%] bottom-[25%] flex flex-col items-center justify-center gap-3 px-4 text-center sm:gap-4">
+            <h1 className="sr-only">Starotaku — Track, Browse, and Stream Anime &amp; Manga</h1>
             <Image
-              src="/logo.webp"
+              src="/hero-lockup.webp"
               alt=""
-              width={256}
-              height={256}
+              width={624}
+              height={514}
               priority
-              className="h-36 w-36 drop-shadow-lg sm:h-32 sm:w-32 md:h-40 md:w-40"
+              className="h-auto w-64 drop-shadow-lg sm:w-72 md:w-88"
             />
-            <h1
-              className={`${heroFont.className} text-4xl font-extrabold text-white drop-shadow-lg sm:text-6xl md:text-7xl`}
-            >
-              Starotaku
-            </h1>
-            <p
-              className={`${heroFont.className} max-w-full text-nowrap text-sm font-semibold text-white/90 drop-shadow sm:text-xl md:text-2xl`}
-            >
-              Track, Browse, and Stream Anime &amp; Manga
-            </p>
             <div className="w-full max-w-md my-8">
               <SearchBar className="border-accent bg-white/15 text-white shadow-lg shadow-black/30 ring-1 ring-white/20 backdrop-blur-md placeholder:text-white/70 focus-visible:border-accent focus-visible:ring-accent/40 dark:border-accent dark:bg-white/15 dark:text-white dark:placeholder:text-white/70 dark:shadow-black/40" />
             </div>
