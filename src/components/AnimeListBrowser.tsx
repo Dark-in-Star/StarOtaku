@@ -19,7 +19,7 @@ import { matchesListFilters, matchesQuery } from "@/lib/list-filters";
 import { selectScannableEntries } from "@/lib/sequels";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import { clearSearchAndFilters, setFilters, setQuery, setSort, setStatus, setType } from "@/lib/store/listFiltersSlice";
-import type { AnimeNode, ListNode, ListStatus, MyListStatus } from "@/lib/types";
+import type { AnimeNode, ListNode, ListStatus, MyListStatus, NextAiringEpisode } from "@/lib/types";
 
 type Entry = ListNode<AnimeNode, MyListStatus>;
 
@@ -64,9 +64,12 @@ const COMPARATORS: Record<SortValue, (a: Entry, b: Entry) => number> = {
 export function AnimeListBrowser({
   entries: initialEntries,
   initialStatus,
+  schedules = {},
 }: {
   entries: Entry[];
   initialStatus: ListStatus | "all";
+  /** Next-airing schedules keyed by MAL id, for currently-airing shows being watched. */
+  schedules?: Record<number, NextAiringEpisode>;
 }) {
   const [entries, setEntries] = useState(initialEntries);
   const dispatch = useAppDispatch();
@@ -234,6 +237,7 @@ export function AnimeListBrowser({
               key={node.id}
               node={node}
               listStatus={list_status}
+              schedule={schedules[node.id]}
               onUpdated={(update) => handleUpdated(node.id, update)}
               onRemoved={() => handleRemoved(node.id)}
             />

@@ -6,7 +6,8 @@ import { useState, useTransition } from "react";
 import { Pencil, Plus, Star } from "lucide-react";
 import { updateAnimeStatusAction } from "@/lib/actions";
 import { formatAnimeStatus, formatMediaType, formatSeasonLabel } from "@/lib/format";
-import type { AnimeNode, MyListStatus } from "@/lib/types";
+import type { AnimeNode, MyListStatus, NextAiringEpisode } from "@/lib/types";
+import { hasUnwatchedNewEpisode } from "@/lib/newEpisode";
 import { Button } from "@/components/ui/button";
 import { ScoreBadge } from "./ScoreBadge";
 import { AnimeListEditModal } from "./AnimeListEditModal";
@@ -15,11 +16,14 @@ import { MAX_VISIBLE_GENRES } from "@/lib/constants";
 export function AnimeListRow({
   node,
   listStatus,
+  schedule,
   onUpdated,
   onRemoved,
 }: {
   node: AnimeNode;
   listStatus: MyListStatus;
+  /** Next-airing schedule, when known — drives the unwatched-new-episode badge. */
+  schedule?: NextAiringEpisode;
   onUpdated: (update: Partial<MyListStatus>) => void;
   onRemoved: () => void;
 }) {
@@ -61,6 +65,9 @@ export function AnimeListRow({
   const visibleGenres = genres.slice(0, MAX_VISIBLE_GENRES);
   const extraGenreCount = genres.length - visibleGenres.length;
   const myScore = listStatus.score ?? 0;
+  // Reads the live `episodes` state, not listStatus, so the badge clears as soon as the
+  // viewer bumps their progress — without waiting for a refetch.
+  const hasNewEpisode = hasUnwatchedNewEpisode(schedule, episodes);
 
   return (
     <>
@@ -79,6 +86,11 @@ export function AnimeListRow({
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="min-w-0">
+            {hasNewEpisode && (
+              <span className="mb-1 inline-flex items-center rounded-full bg-accent px-1.5 py-0.5 text-[0.6rem] font-bold uppercase leading-none tracking-wide text-accent-foreground sm:text-[0.65rem]">
+                New
+              </span>
+            )}
             <Link
               href={`/anime/${node.id}`}
               className="line-clamp-2 text-sm font-semibold text-foreground hover:text-accent sm:text-base"

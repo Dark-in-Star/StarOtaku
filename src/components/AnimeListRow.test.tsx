@@ -158,4 +158,69 @@ describe("AnimeListRow", () => {
     expect(screen.getAllByText("86")).toHaveLength(2);
     expect(screen.queryByText(/^My /)).not.toBeInTheDocument();
   });
+
+  describe("new episode badge", () => {
+    const AIRING: AnimeNode = { ...NODE, status: "currently_airing" };
+    const WATCHING: MyListStatus = { status: "watching", score: 0, num_episodes_watched: 7 };
+
+    function scheduleIn(days: number, episode: number) {
+      return {
+        episode,
+        airingAt: new Date(Date.now() + days * 86_400_000).toISOString(),
+        timeUntilAiring: days * 86_400,
+        anilistId: 1,
+      };
+    }
+
+    it("badges an unwatched episode aired within the window", () => {
+      render(
+        <AnimeListRow
+          node={AIRING}
+          listStatus={WATCHING}
+          schedule={scheduleIn(2, 9)}
+          onUpdated={vi.fn()}
+          onRemoved={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText("New")).toBeInTheDocument();
+    });
+
+    it("shows no badge when the viewer is caught up", () => {
+      render(
+        <AnimeListRow
+          node={AIRING}
+          listStatus={{ ...WATCHING, num_episodes_watched: 8 }}
+          schedule={scheduleIn(2, 9)}
+          onUpdated={vi.fn()}
+          onRemoved={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryByText("New")).not.toBeInTheDocument();
+    });
+
+    it("shows no badge without a schedule", () => {
+      render(<AnimeListRow node={AIRING} listStatus={WATCHING} onUpdated={vi.fn()} onRemoved={vi.fn()} />);
+
+      expect(screen.queryByText("New")).not.toBeInTheDocument();
+    });
+
+    it("clears the badge as soon as the viewer logs the episode", async () => {
+      const user = userEvent.setup();
+      render(
+        <AnimeListRow
+          node={AIRING}
+          listStatus={WATCHING}
+          schedule={scheduleIn(2, 9)}
+          onUpdated={vi.fn()}
+          onRemoved={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText("New")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Increase episodes watched" }));
+      expect(screen.queryByText("New")).not.toBeInTheDocument();
+    });
+  });
 });

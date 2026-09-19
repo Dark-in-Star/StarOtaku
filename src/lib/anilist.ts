@@ -74,6 +74,97 @@ export async function getNextAiringEpisode(malId: number, revalidate = 300): Pro
   };
 }
 
+// One page holds 50 media; AniList caps perPage at 50. Callers with more ids than that
+// page through rather than firing one request per id — AniList rate-limits per client.
+const ANILIST_PAGE_SIZE = 50;
+
+const AIRING_SCHEDULES_QUERY = `
+  query ($malIds: [Int], $perPage: Int) {
+    Page(perPage: $perPage) {
+      media(idMal_in: $malIds, type: ANIME) {
+        id
+        idMal
+        nextAiringEpisode {
+          airingAt
+          timeUntilAiring
+          episode
+        }
+      }
+    }
+  }
+`;
+
+interface AniListSchedulePageResponse {
+  data?: {
+    Page?: {
+      media?: {
+        id: number;
+        idMal: number | null;
+        nextAiringEpisode?: {
+          airingAt: number;
+          timeUntilAiring: number;
+          episode: number;
+        } | null;
+      }[] | null;
+    } | null;
+  };
+  errors?: { message: string }[];
+}
+
+/**
+ * Batched form of `getNextAiringEpisode`: looks up many MAL ids in one GraphQL request,
+ * keyed by MAL id. Anime AniList doesn't know, or that aren't currently airing, are simply
+ * absent from the map. Like the single lookup this never throws — a failed page yields no
+ * entries rather than breaking the caller's page.
+ */
+export async function getNextAiringEpisodes(
+  malIds: number[],
+  revalidate = 300,
+): Promise<Map<number, NextAiringEpisode>> {
+  const schedules = new Map<number, NextAiringEpisode>();
+  const unique = [...new Set(malIds)];
+
+  const pages: number[][] = [];
+  for (let i = 0; i < unique.length; i += ANILIST_PAGE_SIZE) {
+    pages.push(unique.slice(i, i + ANILIST_PAGE_SIZE));
+  }
+
+  await Promise.all(
+    pages.map(async (ids) => {
+      let response: Response;
+      try {
+        response = await fetch(ANILIST_API_URL, {
+          method: "POST",
+          headers: ANILIST_HEADERS,
+          body: JSON.stringify({
+            query: AIRING_SCHEDULES_QUERY,
+            variables: { malIds: ids, perPage: ANILIST_PAGE_SIZE },
+          }),
+          next: { revalidate },
+        });
+      } catch {
+        return;
+      }
+
+      if (!response.ok) return;
+
+      const json = (await response.json()) as AniListSchedulePageResponse;
+      for (const media of json.data?.Page?.media ?? []) {
+        const next = media.nextAiringEpisode;
+        if (!next || media.idMal === null) continue;
+        schedules.set(media.idMal, {
+          episode: next.episode,
+          airingAt: new Date(next.airingAt * 1000).toISOString(),
+          timeUntilAiring: next.timeUntilAiring,
+          anilistId: media.id,
+        });
+      }
+    }),
+  );
+
+  return schedules;
+}
+
 const ANILIST_ID_QUERY = `
   query ($malId: Int) {
     Media(idMal: $malId, type: ANIME) {
