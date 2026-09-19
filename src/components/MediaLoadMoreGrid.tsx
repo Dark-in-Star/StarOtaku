@@ -12,7 +12,7 @@ import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
 import { setBrowseFilters } from "@/lib/store/browseFiltersSlice";
 import type { ListMedia } from "@/lib/store/listFiltersSlice";
 import type { Genre } from "@/lib/types";
-import { Button } from "@/components/ui/button";
+import { useInfiniteScroll, sentinelIndex } from "@/lib/useInfiniteScroll";
 
 // MAL's ranking/search endpoints don't accept a genre/rating/date filter — filtering only
 // ever happens client-side over pages already fetched. Without this, picking a genre that
@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 // batch: 12, then 24, then 36, ...) gets its own fresh time budget.
 const RESULT_BATCH = 12;
 const SEARCH_TIMEOUT_MS = 30_000;
+const GRID_MAX_COLUMNS = 6;
 
 export function MediaLoadMoreGrid({
   initialItems,
@@ -92,6 +93,14 @@ export function MediaLoadMoreGrid({
 
   const isAutoSearching = wantsToSearch && !searchTimedOut;
 
+  // The grid tops out at xl:grid-cols-6, so trailing six items always covers the last row
+  // and the sentinel lands at or above the second-to-last row on every breakpoint.
+  const sentinelAt = sentinelIndex(filtered.length, GRID_MAX_COLUMNS);
+  const sentinelRef = useInfiniteScroll(() => {
+    setResultTarget(filtered.length + RESULT_BATCH);
+    setSearchTimedOut(false);
+  }, hasMore && !isAutoSearching && !isPending && filtered.length > 0);
+
   useEffect(() => {
     if (!isAutoSearching || isPending) return;
     handleLoadMore();
@@ -120,43 +129,31 @@ export function MediaLoadMoreGrid({
         )
       ) : (
         <MediaGrid>
-          {filtered.map((item) => (
-            <MediaCard
-              key={item.id}
-              id={item.id}
-              media={media}
-              href={item.href}
-              title={item.title}
-              imageUrl={item.imageUrl}
-              mean={item.mean}
-              genres={item.genres}
-              mediaType={item.mediaType}
-              rank={item.rank}
-              listStatus={item.listStatus}
-            />
+          {filtered.map((item, index) => (
+            // h-full so MediaCard's own h-full still resolves against the grid cell.
+            <div key={item.id} className="relative h-full">
+              {index === sentinelAt && (
+                <div ref={sentinelRef} aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px" />
+              )}
+              <MediaCard
+                id={item.id}
+                media={media}
+                href={item.href}
+                title={item.title}
+                imageUrl={item.imageUrl}
+                mean={item.mean}
+                genres={item.genres}
+                mediaType={item.mediaType}
+                rank={item.rank}
+                listStatus={item.listStatus}
+              />
+            </div>
           ))}
         </MediaGrid>
       )}
 
-      {isAutoSearching && filtered.length > 0 && (
-        <p className="text-center text-sm text-muted">Looking for more matches…</p>
-      )}
-
-      {hasMore && !isAutoSearching && (
-        <div className="flex justify-center py-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setResultTarget(filtered.length + RESULT_BATCH);
-              setSearchTimedOut(false);
-            }}
-            disabled={isPending}
-            className="h-auto rounded-full border-border/60 px-6 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:text-accent hover:shadow-md active:translate-y-0 disabled:pointer-events-none disabled:opacity-60"
-          >
-            {isPending ? "Loading…" : "Load more"}
-          </Button>
-        </div>
+      {hasMore && filtered.length > 0 && (isAutoSearching || isPending) && (
+        <p className="text-center text-sm text-muted">Loading more…</p>
       )}
     </div>
   );
