@@ -147,12 +147,25 @@ export const MANGA_LIST_FIELDS =
 export const MY_ANIME_LIST_FIELDS = `${ANIME_LIST_FIELDS},alternative_titles`;
 export const MY_MANGA_LIST_FIELDS = `${MANGA_LIST_FIELDS},alternative_titles`;
 
+// Just enough for a search-suggestion row; both media share it since each endpoint ignores
+// fields it doesn't have.
+export const SEARCH_SUGGESTION_FIELDS = "id,title,main_picture,mean,media_type,status,start_season,start_date,genres,my_list_status";
+
 export const MANGA_DETAIL_FIELDS =
   "id,title,main_picture,alternative_titles,start_date,end_date,synopsis,mean,rank,popularity," +
   "num_list_users,num_scoring_users,nsfw,media_type,status,genres,num_volumes,num_chapters,authors{first_name,last_name}," +
   "background,related_anime,related_manga," +
   "recommendations{id,title,main_picture,mean,media_type,genres,my_list_status}," +
   "pictures,my_list_status";
+
+// MAL answers a q under 3 characters with 400 "invalid q", leaving short titles like "86"
+// or "K" unsearchable. It ignores punctuation when matching, so padding with dots returns
+// the same results the bare query would (verified live: "86." finds 86, "k.." finds K-On!).
+const MAL_MIN_QUERY_LENGTH = 3;
+
+function malSearchQuery(q: string): string {
+  return q.padEnd(MAL_MIN_QUERY_LENGTH, ".");
+}
 
 // MAL's client-ID-only (no user token) mode appears to always exclude NSFW-flagged
 // content (verified: searching a well-known Hentai title returns zero results with just
@@ -162,7 +175,10 @@ export const MANGA_DETAIL_FIELDS =
 // visitor's own MAL account having adult-content display enabled.
 export async function searchAnime(q: string, limit = 24, fields = ANIME_LIST_FIELDS, offset = 0) {
   const token = (await getValidAccessToken()) ?? undefined;
-  return apiGet<MalListResponse<{ node: AnimeNode }>>("/anime", { query: { q, limit, offset, fields }, token });
+  return apiGet<MalListResponse<{ node: AnimeNode }>>("/anime", {
+    query: { q: malSearchQuery(q), limit, offset, fields },
+    token,
+  });
 }
 
 export async function getAnime(id: number, fields = ANIME_DETAIL_FIELDS) {
@@ -209,7 +225,10 @@ export async function getSeasonalAnime(
 
 export async function searchManga(q: string, limit = 24, fields = MANGA_LIST_FIELDS, offset = 0) {
   const token = (await getValidAccessToken()) ?? undefined;
-  return apiGet<MalListResponse<{ node: MangaNode }>>("/manga", { query: { q, limit, offset, fields }, token });
+  return apiGet<MalListResponse<{ node: MangaNode }>>("/manga", {
+    query: { q: malSearchQuery(q), limit, offset, fields },
+    token,
+  });
 }
 
 export async function getManga(id: number, fields = MANGA_DETAIL_FIELDS) {

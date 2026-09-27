@@ -43,6 +43,15 @@ describe("searchAnime", () => {
     expect(url).toContain("q=naruto");
     expect(url).toContain("limit=10");
   });
+
+  it("pads a query shorter than MAL's 3-character minimum", async () => {
+    const fetchMock = mockFetchOnce({ data: [] });
+
+    await searchAnime("86", 10);
+
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(new URL(url).searchParams.get("q")).toBe("86.");
+  });
 });
 
 describe("getAnimeRanking", () => {

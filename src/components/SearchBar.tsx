@@ -6,40 +6,46 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { SearchOverlay, browseSearchHref } from "./SearchOverlay";
 
-export function SearchBar({
-  onNavigate,
-  autoFocus,
-  className,
-  mobileCollapse,
-}: {
-  onNavigate?: () => void;
-  autoFocus?: boolean;
-  className?: string;
-  mobileCollapse?: boolean;
-}) {
+export function SearchBar({ className, mobileCollapse }: { className?: string; mobileCollapse?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [value, setValue] = useState(searchParams.get("q") ?? "");
+  const [origin, setOrigin] = useState<HTMLElement | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setValue(e.target.value);
+    // Only a real character takes over the page — a click or tab into the box shouldn't.
+    if (e.target.value.trim()) setOrigin(e.currentTarget);
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const q = value.trim();
     if (!q) return;
-    router.push(`/browse?q=${encodeURIComponent(q)}`);
-    onNavigate?.();
+    router.push(browseSearchHref(q));
     setMobileOpen(false);
   }
+
+  const overlay = (
+    <SearchOverlay
+      open={origin !== null}
+      origin={origin}
+      query={value}
+      onQueryChange={setValue}
+      onClosed={() => setOrigin(null)}
+    />
+  );
 
   const form = (
     <form onSubmit={handleSubmit} className="relative w-full">
       <Input
         type="search"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={handleChange}
         placeholder="Search anime or manga..."
-        autoFocus={autoFocus || (mobileCollapse && mobileOpen)}
         className={cn(
           "h-9 rounded-full border-border bg-surface-muted pr-9 placeholder:text-muted focus-visible:border-accent",
           className,
@@ -60,7 +66,14 @@ export function SearchBar({
     </form>
   );
 
-  if (!mobileCollapse) return form;
+  if (!mobileCollapse) {
+    return (
+      <>
+        {form}
+        {overlay}
+      </>
+    );
+  }
 
   const expandedMobileForm = (
     <form onSubmit={handleSubmit} className="relative flex-1">
@@ -68,7 +81,7 @@ export function SearchBar({
       <Input
         type="search"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={handleChange}
         placeholder="Search anime or manga..."
         autoFocus
         className="h-9 rounded-full border-border bg-surface-muted pl-9 placeholder:text-muted focus-visible:border-accent"
@@ -105,6 +118,7 @@ export function SearchBar({
           </Button>
         )}
       </div>
+      {overlay}
     </>
   );
 }

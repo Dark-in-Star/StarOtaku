@@ -6,18 +6,13 @@ import { useState, useTransition } from "react";
 import { Pencil, Plus, Star } from "lucide-react";
 import { updateAnimeStatusAction } from "@/lib/actions";
 import { formatAnimeStatus, formatMediaType, formatSeasonLabel } from "@/lib/format";
-import type { AnimeNode, AnimeStatus, MyListStatus, NextAiringEpisode } from "@/lib/types";
+import type { AnimeNode, MyListStatus, NextAiringEpisode } from "@/lib/types";
+import { PUBLICATION_STATUS_CLASS } from "@/lib/constants";
 import { hasUnwatchedNewEpisode } from "@/lib/newEpisode";
 import { Button } from "@/components/ui/button";
 import { ScoreBadge } from "./ScoreBadge";
 import { AnimeListEditModal } from "./AnimeListEditModal";
 import { GenreChips } from "./GenreChips";
-
-const AIRING_STATUS_CLASS: Record<AnimeStatus, string> = {
-  currently_airing: "font-medium text-score",
-  not_yet_aired: "font-medium text-accent",
-  finished_airing: "",
-};
 
 export function AnimeListRow({
   node,
@@ -105,7 +100,7 @@ export function AnimeListRow({
             {formatMediaType(node.media_type)}
             {seasonLabel ? ` · ${seasonLabel}` : ""}
             {node.status && (
-              <span className={AIRING_STATUS_CLASS[node.status]}> · {formatAnimeStatus(node.status)}</span>
+              <span className={PUBLICATION_STATUS_CLASS[node.status]}> · {formatAnimeStatus(node.status)}</span>
             )}
           </p>
 
