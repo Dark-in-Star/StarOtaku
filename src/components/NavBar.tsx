@@ -22,7 +22,7 @@ export function NavBar({
   userName?: string;
 }) {
   const pathname = usePathname();
-  const isHome = pathname === "/" || pathname.startsWith("/mylist");
+  const pageHasOwnSearch = pathname === "/" || pathname.startsWith("/mylist") || pathname.startsWith("/browse");
   const isMyList = pathname.startsWith("/mylist");
 
   return (
@@ -64,7 +64,7 @@ export function NavBar({
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
-          {!isHome && (
+          {!pageHasOwnSearch && (
             <div className="hidden sm:block sm:w-40 lg:w-56">
               <Suspense fallback={<div className="h-9 w-full rounded-full bg-surface-muted" />}>
                 <SearchBar />
