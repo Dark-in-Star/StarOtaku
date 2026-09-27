@@ -21,6 +21,7 @@ export function ListFilterButton({
   typeOptions,
   type,
   onTypeChange,
+  airingStatusOptions,
 }: {
   nodes: { genres?: Genre[]; mean?: number; start_date?: string }[];
   allGenres?: Genre[];
@@ -29,6 +30,7 @@ export function ListFilterButton({
   typeOptions?: { value: string; label: string }[];
   type?: string;
   onTypeChange?: (type: string) => void;
+  airingStatusOptions?: { value: string; label: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const activeCount = countActiveFilters(filters);
@@ -71,6 +73,7 @@ export function ListFilterButton({
         typeOptions={typeOptions}
         type={type}
         onTypeChange={onTypeChange}
+        airingStatusOptions={airingStatusOptions}
       />
     </>
   );

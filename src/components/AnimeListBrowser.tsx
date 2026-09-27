@@ -14,7 +14,7 @@ import { ScrollableTabRow } from "./ScrollableTabRow";
 import { SequelPromo } from "./SequelPromo";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ANIME_LIST_STATUS_LABELS } from "@/lib/format";
+import { ANIME_LIST_STATUS_LABELS, ANIME_STATUS_LABELS } from "@/lib/format";
 import { matchesListFilters, matchesQuery } from "@/lib/list-filters";
 import { selectScannableEntries } from "@/lib/sequels";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
@@ -42,6 +42,8 @@ const TYPE_OPTIONS = [
   { value: "pv", label: "PV" },
   { value: "tv_special", label: "TV Special" },
 ];
+
+const AIRING_STATUS_OPTIONS = Object.entries(ANIME_STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
 const SORT_OPTIONS = [
   { value: "title", label: "Alphabetical" },
@@ -194,6 +196,7 @@ export function AnimeListBrowser({
             typeOptions={TYPE_OPTIONS}
             type={type}
             onTypeChange={(value) => dispatch(setType({ media: "anime", type: value }))}
+            airingStatusOptions={AIRING_STATUS_OPTIONS}
           />
 
           <Button asChild variant="outline" className="h-9 gap-1.5">

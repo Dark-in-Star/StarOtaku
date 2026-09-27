@@ -43,6 +43,7 @@ export function ListFilterModal({
   typeOptions,
   type,
   onTypeChange,
+  airingStatusOptions,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -52,6 +53,7 @@ export function ListFilterModal({
   typeOptions?: { value: string; label: string }[];
   type?: string;
   onTypeChange?: (type: string) => void;
+  airingStatusOptions?: { value: string; label: string }[];
 }) {
   const [draft, setDraft] = useState(filters);
   // Re-seed the draft from committed filters each time the modal opens, without
@@ -68,6 +70,15 @@ export function ListFilterModal({
       genres: prev.genres.includes(id)
         ? prev.genres.filter((g) => g !== id)
         : [...prev.genres, id],
+    }));
+  }
+
+  function toggleAiringStatus(value: string) {
+    setDraft((prev) => ({
+      ...prev,
+      airingStatuses: prev.airingStatuses.includes(value)
+        ? prev.airingStatuses.filter((s) => s !== value)
+        : [...prev.airingStatuses, value],
     }));
   }
 
@@ -106,7 +117,7 @@ export function ListFilterModal({
           </Button>
         </div>
         <DialogDescription className="sr-only">
-          Filter your list by genre, rating, and release date.
+          Filter your list by airing status, genre, rating, and release date.
         </DialogDescription>
 
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-5">
@@ -206,6 +217,31 @@ export function ListFilterModal({
               </div>
             </div>
           </div>
+          {airingStatusOptions && airingStatusOptions.length > 0 && (
+            <div className="flex flex-col gap-3 border-t border-border pt-5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Airing Status
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {airingStatusOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-pressed={draft.airingStatuses.includes(option.value)}
+                    onClick={() => toggleAiringStatus(option.value)}
+                    className={clsx(
+                      "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                      draft.airingStatuses.includes(option.value)
+                        ? "border-accent bg-accent text-accent-foreground"
+                        : "border-border bg-surface text-muted hover:border-accent hover:text-accent",
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="flex flex-col gap-3 border-t border-border pt-5">
             {genreFacets.length > 0 && (
               <div className="flex flex-col gap-2">

@@ -48,7 +48,7 @@ export function formatDateRange(start?: string, end?: string): string {
   return formatDate(end);
 }
 
-const ANIME_STATUS_LABELS: Record<AnimeStatus, string> = {
+export const ANIME_STATUS_LABELS: Record<AnimeStatus, string> = {
   finished_airing: "Finished Airing",
   currently_airing: "Currently Airing",
   not_yet_aired: "Not Yet Aired",

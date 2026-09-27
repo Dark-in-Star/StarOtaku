@@ -6,6 +6,7 @@ export interface ListFilters {
   ratingMax: number;
   dateFrom: string;
   dateTo: string;
+  airingStatuses: string[];
 }
 
 export const RATING_MIN = 0;
@@ -17,6 +18,7 @@ export const DEFAULT_LIST_FILTERS: ListFilters = {
   ratingMax: RATING_MAX,
   dateFrom: "",
   dateTo: "",
+  airingStatuses: [],
 };
 
 export interface GenreFacet {
@@ -57,11 +59,12 @@ export function countActiveFilters(filters: ListFilters): number {
   if (filters.genres.length > 0) count += 1;
   if (filters.ratingMin > RATING_MIN || filters.ratingMax < RATING_MAX) count += 1;
   if (filters.dateFrom || filters.dateTo) count += 1;
+  if (filters.airingStatuses.length > 0) count += 1;
   return count;
 }
 
 export function matchesListFilters(
-  node: { genres?: Genre[]; mean?: number; start_date?: string },
+  node: { genres?: Genre[]; mean?: number; start_date?: string; status?: string },
   filters: ListFilters,
 ): boolean {
   if (filters.genres.length > 0) {
@@ -75,6 +78,10 @@ export function matchesListFilters(
 
   if (filters.dateFrom && (!node.start_date || node.start_date < filters.dateFrom)) return false;
   if (filters.dateTo && (!node.start_date || node.start_date > filters.dateTo)) return false;
+
+  if (filters.airingStatuses.length > 0 && (!node.status || !filters.airingStatuses.includes(node.status))) {
+    return false;
+  }
 
   return true;
 }
