@@ -6,12 +6,18 @@ import { useState, useTransition } from "react";
 import { Pencil, Plus, Star } from "lucide-react";
 import { updateAnimeStatusAction } from "@/lib/actions";
 import { formatAnimeStatus, formatMediaType, formatSeasonLabel } from "@/lib/format";
-import type { AnimeNode, MyListStatus, NextAiringEpisode } from "@/lib/types";
+import type { AnimeNode, AnimeStatus, MyListStatus, NextAiringEpisode } from "@/lib/types";
 import { hasUnwatchedNewEpisode } from "@/lib/newEpisode";
 import { Button } from "@/components/ui/button";
 import { ScoreBadge } from "./ScoreBadge";
 import { AnimeListEditModal } from "./AnimeListEditModal";
 import { MAX_VISIBLE_GENRES } from "@/lib/constants";
+
+const AIRING_STATUS_CLASS: Record<AnimeStatus, string> = {
+  currently_airing: "font-medium text-score",
+  not_yet_aired: "font-medium text-accent",
+  finished_airing: "",
+};
 
 export function AnimeListRow({
   node,
@@ -60,7 +66,6 @@ export function AnimeListRow({
   const pct = total ? Math.min(100, (episodes / total) * 100) : 0;
 
   const englishTitle = node.alternative_titles?.en;
-  const isAiring = node.status === "currently_airing";
   const genres = node.genres ?? [];
   const visibleGenres = genres.slice(0, MAX_VISIBLE_GENRES);
   const extraGenreCount = genres.length - visibleGenres.length;
@@ -103,7 +108,9 @@ export function AnimeListRow({
           <p className="text-xs text-muted sm:text-sm">
             {formatMediaType(node.media_type)}
             {seasonLabel ? ` · ${seasonLabel}` : ""}
-            {isAiring && <span className="font-medium text-score"> · {formatAnimeStatus(node.status)}</span>}
+            {node.status && (
+              <span className={AIRING_STATUS_CLASS[node.status]}> · {formatAnimeStatus(node.status)}</span>
+            )}
           </p>
 
           {visibleGenres.length > 0 && (

@@ -145,6 +145,17 @@ describe("AnimeListRow", () => {
     expect(screen.getByText("My 9")).toBeInTheDocument();
   });
 
+  it.each([
+    ["finished_airing", "Finished Airing"],
+    ["not_yet_aired", "Not Yet Aired"],
+  ] as const)("shows the %s airing status", (status, label) => {
+    render(
+      <AnimeListRow node={{ ...NODE, status }} listStatus={LIST_STATUS} onUpdated={vi.fn()} onRemoved={vi.fn()} />,
+    );
+
+    expect(screen.getByText(new RegExp(label))).toBeInTheDocument();
+  });
+
   it("shows the English title even when it matches the main title, but omits my score when unrated", () => {
     render(
       <AnimeListRow
