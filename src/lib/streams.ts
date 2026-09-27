@@ -1,5 +1,5 @@
 import "server-only";
-import { getAniListId } from "./anilist";
+import { resolveAniListEpisode } from "./anilist";
 import type { StreamServer, StreamSources } from "./types";
 import { base64ToString } from "./utils";
 
@@ -127,18 +127,19 @@ async function fetchFlixViaReader(url: string, revalidate: number): Promise<Flix
 // The flix endpoint is keyed on the AniList id, never the MAL id. A MAL id still
 // returns HTTP 200 with `success: true` and an empty `servers` array, so neither
 // `res.ok` nor `success` catches the mistake — it fails silently on roughly half the
-// modern catalogue. See docs/flix-link-resolution.md.
+// modern catalogue. The episode is renumbered too: a MAL entry AniList splits into parts
+// counts continuously, while each part restarts at 1. See docs/flix-link-resolution.md.
 export async function getStreamSources(
   malId: number,
   episode: number,
   revalidate = 1800,
 ): Promise<StreamSources | null> {
-  const anilistId = await getAniListId(malId);
+  const target = await resolveAniListEpisode(malId, episode);
   // A missing id here is almost always an unreachable AniList rather than an unknown
   // title, and the two must not collapse into the same "no source" message.
-  if (!anilistId) throw new StreamSourceError("Could not resolve the AniList id.");
+  if (!target) throw new StreamSourceError("Could not resolve the AniList id.");
 
-  const flixUrl = `${FLIX_API_BASE_URL}/${anilistId}/${episode}`;
+  const flixUrl = `${FLIX_API_BASE_URL}/${target.anilistId}/${target.episode}`;
 
   let json = await fetchFlixDirect(flixUrl, revalidate);
   if (!json) json = await fetchFlixViaReader(flixUrl, revalidate);

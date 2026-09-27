@@ -38,6 +38,16 @@ query ($malId: Int) {
 }
 ```
 
+> **One MAL id can map to several AniList ids.** MAL sometimes keeps a split release as
+> one entry with continuous episode numbers, while AniList lists each part separately —
+> all sharing the same `idMal`, each numbering its episodes from 1. `Media(idMal:)` then
+> returns an arbitrary one of them. Steel Ball Run (MAL 61469) is the known case: AniList
+> 190327 (1st STAGE, 1 ep, finished) and 210482 (2nd & 3rd STAGE, 11 eps, airing), so
+> MAL episode 2 is `/api/flix/210482/1`. The code therefore queries
+> `Page { media(idMal:) }` for every part, orders them by start date, and renumbers the
+> episode onto the right part (`src/lib/anilistParts.ts`). The same renumbering applies
+> to the next-airing schedule so it matches MAL's watched count.
+
 `getNextAiringEpisode()` already returns this as `anilistId` on its `NextAiringEpisode`
 result (see `src/lib/types.ts`). Any new resolver should reuse this module rather than
 introducing a second AniList client.

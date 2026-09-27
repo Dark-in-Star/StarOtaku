@@ -21,7 +21,13 @@ function mockChain(anilistId: number | null, flix: unknown, flixOk = true) {
   const fetchMock = vi.fn();
   fetchMock.mockResolvedValueOnce({
     ok: true,
-    json: async () => ({ data: { Media: anilistId === null ? null : { id: anilistId } } }),
+    json: async () => ({
+      data: {
+        Page: {
+          media: anilistId === null ? [] : [{ id: anilistId, idMal: 1, episodes: 12, startDate: null }],
+        },
+      },
+    }),
   });
   fetchMock.mockResolvedValueOnce(flixResponse(flix, flixOk));
   vi.stubGlobal("fetch", fetchMock);
@@ -39,6 +45,39 @@ describe("getStreamSources", () => {
     await getStreamSources(52991, 1);
 
     expect(fetchMock.mock.calls[1][0]).toBe("https://reanime.to/api/flix/154587/1");
+  });
+
+  // AniList splits Steel Ball Run (MAL 61469) into a 1-episode part and an 11-episode part,
+  // while MAL numbers the whole run continuously — MAL episode 2 is the second part's 1st.
+  it("renumbers the episode onto the right part when AniList splits a MAL entry", async () => {
+    const fetchMock = vi.fn();
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: {
+          Page: {
+            media: [
+              {
+                id: 210482,
+                idMal: 61469,
+                episodes: 11,
+                startDate: { year: 2026, month: 9, day: 25 },
+                nextAiringEpisode: { episode: 2, airingAt: 1790928000, timeUntilAiring: 1 },
+              },
+              { id: 190327, idMal: 61469, episodes: 1, startDate: { year: 2026, month: 3, day: 19 } },
+            ],
+          },
+        },
+      }),
+    });
+    fetchMock.mockResolvedValueOnce(flixResponse({ success: true, servers: [server("HD-1", "sub")] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getStreamSources(61469, 2);
+
+    expect(fetchMock.mock.calls[1][0]).toBe("https://reanime.to/api/flix/210482/1");
+    // The player still tracks MAL's numbering.
+    expect(result?.episode).toBe(2);
   });
 
   it("maps servers to embed urls and audio tracks", async () => {
