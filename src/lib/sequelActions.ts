@@ -1,6 +1,6 @@
 "use server";
 
-import { getAnimeList, getAnimeRelations } from "./api";
+import { getAnimeList, getAnimeRelations, isRateLimited } from "./api";
 import {
   BROAD_RELATION_TYPES,
   STRICT_RELATION_TYPES,
@@ -13,11 +13,16 @@ import {
 } from "./sequels";
 import type { AnimeNode, MyListEntryStatus } from "./types";
 
-// One list entry = one detail request, against a rate-limited API. Three levers keep that
-// sane: only scan started titles (selectScannableEntries), fetch a 3-field payload that
-// Next caches for a day (getAnimeRelations), and walk the list in bounded-concurrency
-// chunks so a 300-entry list doesn't open 300 sockets at once.
-const CONCURRENCY = 6;
+// One list entry = one detail request against a rate-limited API. MAL's edge starts
+// throttling after a few hundred rapid requests (observed: ~250 at ~18 req/s), and the
+// throttle applies to every MAL call this server makes — so an unpaced scan takes the whole
+// app down with it. Entries are fetched one at a time, and a request that actually went to
+// the network (a Data Cache hit returns in a few ms) is stretched to MIN_REQUEST_INTERVAL_MS,
+// capping a cold scan at ~2 req/s while a warm re-scan stays instant.
+const MIN_REQUEST_INTERVAL_MS = 500;
+const CACHE_HIT_THRESHOLD_MS = 50;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Cheap first call: one list read that tells the client how much work there is. */
 export async function planSequelScanAction(): Promise<ScanPlan> {
@@ -35,25 +40,6 @@ export async function planSequelScanAction(): Promise<ScanPlan> {
   };
 }
 
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  limit: number,
-  worker: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let cursor = 0;
-
-  async function run() {
-    while (cursor < items.length) {
-      const index = cursor++;
-      results[index] = await worker(items[index]);
-    }
-  }
-
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, run));
-  return results;
-}
-
 /**
  * Scans one slice of the user's list. Called repeatedly by the client so results and
  * progress stream in rather than blocking on the whole list.
@@ -67,21 +53,32 @@ export async function scanSequelChunkAction(
   const allowed = includeSideStories ? BROAD_RELATION_TYPES : STRICT_RELATION_TYPES;
 
   let failed = 0;
+  let rateLimited = false;
+  const fetched: AnimeNode[] = [];
 
-  const settled = await mapWithConcurrency(targets, CONCURRENCY, async (target) => {
+  for (const target of targets) {
+    const startedAt = Date.now();
     try {
-      return await getAnimeRelations(target.id);
-    } catch {
+      fetched.push(await getAnimeRelations(target.id));
+    } catch (error) {
+      // Once throttled, every further request only extends the ban for the whole app.
+      if (isRateLimited(error)) {
+        rateLimited = true;
+        break;
+      }
       // A single unreachable title must not abort the whole scan.
       failed += 1;
-      return undefined;
     }
-  });
 
-  const hits = settled
-    .filter((node): node is AnimeNode => node !== undefined)
+    const elapsed = Date.now() - startedAt;
+    if (elapsed > CACHE_HIT_THRESHOLD_MS && elapsed < MIN_REQUEST_INTERVAL_MS) {
+      await sleep(MIN_REQUEST_INTERVAL_MS - elapsed);
+    }
+  }
+
+  const hits = fetched
     .map((node) => ({ source: node, found: findNewRelations(node, onListSet, allowed) }))
     .filter((hit) => hit.found.length > 0);
 
-  return { suggestions: mergeSuggestions(hits), failed };
+  return { suggestions: mergeSuggestions(hits), failed, rateLimited };
 }

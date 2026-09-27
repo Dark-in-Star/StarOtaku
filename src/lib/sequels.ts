@@ -127,8 +127,12 @@ export function accumulateSuggestions(
   );
 }
 
-/** Entries scanned per action call — the client walks the list in pages to stream progress. */
-export const SCAN_BATCH_SIZE = 30;
+/**
+ * Entries scanned per action call — the client walks the list in pages to stream progress.
+ * Kept small because each call holds the client's single Server Action slot; anything else
+ * the user triggers meanwhile waits for the in-flight batch (up to ~5s when paced).
+ */
+export const SCAN_BATCH_SIZE = 10;
 
 export interface ScanTarget {
   id: number;
@@ -150,4 +154,6 @@ export interface ScanChunkResult {
   suggestions: SequelSuggestion[];
   /** Entries that errored — surfaced so a partial scan never silently under-reports. */
   failed: number;
+  /** MAL started throttling mid-chunk; the rest of the chunk was skipped. */
+  rateLimited: boolean;
 }

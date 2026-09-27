@@ -16,6 +16,9 @@ function buildForm(fields: Record<string, QueryValue>): string {
   return params.toString();
 }
 
+// See apiGet: a throttled MAL redirects to an endpoint that never answers, so never follow.
+const NO_REDIRECT = "manual" as const;
+
 async function requireToken(): Promise<string> {
   const token = await getValidAccessToken();
   if (!token) throw new Error("Log in with MyAnimeList to do that.");
@@ -34,6 +37,7 @@ export async function updateAnimeStatusAction(input: UpdateAnimeStatusInput) {
   const token = await requireToken();
   const response = await fetch(`${BASE_URL}/anime/${animeId}/my_list_status`, {
     method: "PUT",
+    redirect: NO_REDIRECT,
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       Authorization: `Bearer ${token}`,
@@ -52,6 +56,7 @@ export async function removeAnimeAction(animeId: number) {
   const token = await requireToken();
   const response = await fetch(`${BASE_URL}/anime/${animeId}/my_list_status`, {
     method: "DELETE",
+    redirect: NO_REDIRECT,
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -76,6 +81,7 @@ export async function updateMangaStatusAction(input: UpdateMangaStatusInput) {
   const token = await requireToken();
   const response = await fetch(`${BASE_URL}/manga/${mangaId}/my_list_status`, {
     method: "PUT",
+    redirect: NO_REDIRECT,
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
       Authorization: `Bearer ${token}`,
@@ -95,6 +101,7 @@ export async function removeMangaAction(mangaId: number) {
   const token = await requireToken();
   const response = await fetch(`${BASE_URL}/manga/${mangaId}/my_list_status`, {
     method: "DELETE",
+    redirect: NO_REDIRECT,
     headers: { Authorization: `Bearer ${token}` },
   });
 

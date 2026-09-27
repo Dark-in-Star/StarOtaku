@@ -22,6 +22,10 @@ import type {
 // e2e/mock-server.mjs) without touching a real MyAnimeList account.
 const BASE_URL = process.env.MAL_API_BASE_URL ?? "https://api.myanimelist.net/v2";
 
+// Backstop for a MAL connection that stalls outright: undici's own header timeout is five
+// minutes, long enough that any page render touching MAL looks frozen.
+const REQUEST_TIMEOUT_MS = 15_000;
+
 export class ApiError extends Error {
   status: number;
 
@@ -30,6 +34,12 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = status;
   }
+}
+
+export const RATE_LIMITED_STATUS = 429;
+
+export function isRateLimited(error: unknown): boolean {
+  return error instanceof ApiError && error.status === RATE_LIMITED_STATUS;
 }
 
 /** Thrown by authenticated calls when the visitor has no valid MAL session. */
@@ -82,9 +92,21 @@ async function apiGet<T>(path: string, options: FetchOptions = {}): Promise<T> {
       cache: perUser ? "no-store" : cache,
       next: cache || perUser ? undefined : { revalidate },
       headers: authHeaders(token),
+      // MAL's edge answers a throttled client with a 307 to /error.json, and that endpoint
+      // never responds — following it hangs the request until the timeout. The API itself
+      // never redirects, so any 3xx is the throttle.
+      redirect: "manual",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch {
     throw new ApiError(503, "Could not reach the MyAnimeList API.");
+  }
+
+  if ((response.status >= 300 && response.status < 400) || response.status === RATE_LIMITED_STATUS) {
+    throw new ApiError(
+      RATE_LIMITED_STATUS,
+      "MyAnimeList is temporarily rate-limiting this app. Wait a few minutes, then try again.",
+    );
   }
 
   if (!response.ok) {

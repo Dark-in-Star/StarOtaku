@@ -87,6 +87,14 @@ describe("getAnime", () => {
     await expect(getAnime(999)).rejects.toBeInstanceOf(ApiError);
   });
 
+  it("treats MAL's throttle redirect as rate limiting instead of following it", async () => {
+    const fetchMock = mockFetchOnce(null, { ok: false, status: 307 });
+
+    await expect(getAnime(1)).rejects.toMatchObject({ status: 429 });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.redirect).toBe("manual");
+  });
+
   it("throws a 503 ApiError when the server is unreachable", async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error("network down")) as unknown as typeof fetch;
 

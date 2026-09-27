@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { MediaCard } from "./MediaCard";
 import { MediaGrid } from "./MediaGrid";
@@ -22,8 +22,18 @@ export function SequelFinder() {
   const [statusById, setStatusById] = useState<Record<number, MyListEntryStatus>>({});
   const [error, setError] = useState<string>();
 
-  // Lets an in-flight scan be abandoned when the user restarts with different options.
+  // Lets an in-flight scan be abandoned when the user restarts or leaves the page.
   const runIdRef = useRef(0);
+
+  // Server Actions share one per-client queue, so a scan that outlives this page would keep
+  // enqueueing chunks ahead of every other page's actions (list edits, infinite scroll) and
+  // keep spending MAL's rate limit on results nobody will see.
+  useEffect(() => {
+    const runs = runIdRef;
+    return () => {
+      runs.current += 1;
+    };
+  }, []);
 
   const runScan = useCallback(async () => {
     const runId = ++runIdRef.current;
@@ -54,6 +64,12 @@ export function SequelFinder() {
         setSuggestions((prev) => accumulateSuggestions(prev, result.suggestions));
         setScanned(Math.min(offset + slice.length, plan.targets.length));
         setFailed((prev) => prev + result.failed);
+
+        if (result.rateLimited) {
+          throw new Error(
+            "MyAnimeList started rate-limiting the scan. Wait a few minutes, then scan again — titles already checked are cached, so it picks up quickly.",
+          );
+        }
       }
 
       setPhase("done");
