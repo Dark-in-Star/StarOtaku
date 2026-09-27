@@ -11,7 +11,7 @@ import { hasUnwatchedNewEpisode } from "@/lib/newEpisode";
 import { Button } from "@/components/ui/button";
 import { ScoreBadge } from "./ScoreBadge";
 import { AnimeListEditModal } from "./AnimeListEditModal";
-import { MAX_VISIBLE_GENRES } from "@/lib/constants";
+import { GenreChips } from "./GenreChips";
 
 const AIRING_STATUS_CLASS: Record<AnimeStatus, string> = {
   currently_airing: "font-medium text-score",
@@ -66,9 +66,6 @@ export function AnimeListRow({
   const pct = total ? Math.min(100, (episodes / total) * 100) : 0;
 
   const englishTitle = node.alternative_titles?.en;
-  const genres = node.genres ?? [];
-  const visibleGenres = genres.slice(0, MAX_VISIBLE_GENRES);
-  const extraGenreCount = genres.length - visibleGenres.length;
   const myScore = listStatus.score ?? 0;
   // Reads the live `episodes` state, not listStatus, so the badge clears as soon as the
   // viewer bumps their progress — without waiting for a refetch.
@@ -78,16 +75,13 @@ export function AnimeListRow({
     <>
       <div
         data-testid={`anime-list-row-${node.id}`}
-        className="flex items-start gap-3 rounded-xl border border-border bg-surface p-3 sm:gap-4 mx-4 sm:mx-0"
+        className="relative flex items-start gap-3 rounded-xl border border-border bg-surface p-3 sm:gap-4 mx-4 sm:mx-0"
       >
-        <Link
-          href={`/anime/${node.id}`}
-          className="relative h-20 w-14 shrink-0 overflow-hidden rounded-lg bg-surface-muted sm:h-24 sm:w-16"
-        >
+        <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-lg bg-surface-muted sm:h-24 sm:w-16">
           {node.main_picture && (
-            <Image src={node.main_picture.medium} alt={node.title} fill sizes="64px" className="object-cover" />
+            <Image src={node.main_picture.medium} alt="" fill sizes="64px" className="object-cover" />
           )}
-        </Link>
+        </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="min-w-0">
@@ -96,9 +90,11 @@ export function AnimeListRow({
                 New
               </span>
             )}
+            {/* Stretched link: its ::after covers the whole card so any click opens the details page,
+                while the action buttons sit above it on their own stacking layer. */}
             <Link
               href={`/anime/${node.id}`}
-              className="line-clamp-2 text-sm font-semibold text-foreground hover:text-accent sm:text-base"
+              className="line-clamp-2 text-sm font-semibold text-foreground after:absolute after:inset-0 after:rounded-xl sm:text-base"
             >
               {node.title}
             </Link>
@@ -113,19 +109,7 @@ export function AnimeListRow({
             )}
           </p>
 
-          {visibleGenres.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1">
-              {visibleGenres.map((genre) => (
-                <span
-                  key={genre.id}
-                  className="rounded-full bg-surface-muted px-2 py-0.5 text-[0.65rem] font-medium text-muted sm:text-xs"
-                >
-                  {genre.name}
-                </span>
-              ))}
-              {extraGenreCount > 0 && <span className="text-[0.65rem] text-muted sm:text-xs">+{extraGenreCount}</span>}
-            </div>
-          )}
+          <GenreChips genres={node.genres} title={node.title} variant="muted" />
 
           {(node.mean !== undefined || myScore > 0) && (
             <div className="flex items-center gap-2">
@@ -149,7 +133,7 @@ export function AnimeListRow({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2">
+        <div className="relative z-10 flex shrink-0 flex-col gap-2">
           <Button
             type="button"
             variant="outline"

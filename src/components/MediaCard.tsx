@@ -4,7 +4,7 @@ import { formatMediaType } from "@/lib/format";
 import { ScoreBadge } from "./ScoreBadge";
 import { MediaCardAddButton } from "./MediaCardAddButton";
 import { Genre, MyListEntryStatus } from "@/lib/types";
-import { MAX_VISIBLE_GENRES } from "@/lib/constants";
+import { GenreChips } from "./GenreChips";
 
 interface MediaCardProps {
   href: string;
@@ -37,10 +37,6 @@ export function MediaCard({
   media,
   listStatus,
 }: MediaCardProps) {
-  const allGenres = genres ?? [];
-  const visibleGenres = allGenres.slice(0, MAX_VISIBLE_GENRES);
-  const extraGenreCount = allGenres.length - visibleGenres.length;
-
   const resolvedMedia = media ?? (href.startsWith("/manga/") ? "manga" : "anime");
   const canAdd = id !== undefined;
 
@@ -91,23 +87,7 @@ export function MediaCard({
           {title}
         </h3>
 
-        {visibleGenres.length > 0 && (
-          <div className="mt-auto flex flex-wrap items-center gap-1">
-            {visibleGenres.map((genre) => (
-              <span
-                key={genre.id}
-                className="rounded-full border border-accent/25 bg-accent-soft px-2 py-0.5 text-[0.65rem] font-semibold text-accent sm:text-xs"
-              >
-                {genre.name}
-              </span>
-            ))}
-            {extraGenreCount > 0 && (
-              <span className="rounded-full border border-border/60 px-2 py-0.5 text-[0.65rem] font-semibold text-muted sm:text-xs">
-                +{extraGenreCount}
-              </span>
-            )}
-          </div>
-        )}
+        <GenreChips genres={genres} title={title} variant="accent" className="mt-auto" />
       </div>
 
       <Link href={href} aria-label={title} className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none" />

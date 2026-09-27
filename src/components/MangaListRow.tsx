@@ -10,8 +10,7 @@ import type { MangaNode, MyMangaListStatusNode } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { ScoreBadge } from "./ScoreBadge";
 import { MangaListEditModal } from "./MangaListEditModal";
-
-const MAX_VISIBLE_GENRES = 3;
+import { GenreChips } from "./GenreChips";
 
 export function MangaListRow({
   node,
@@ -55,9 +54,6 @@ export function MangaListRow({
 
   const englishTitle = node.alternative_titles?.en;
   const isPublishing = node.status === "currently_publishing";
-  const genres = node.genres ?? [];
-  const visibleGenres = genres.slice(0, MAX_VISIBLE_GENRES);
-  const extraGenreCount = genres.length - visibleGenres.length;
   const myScore = listStatus.score ?? 0;
 
   return (
@@ -91,19 +87,7 @@ export function MangaListRow({
             {isPublishing && <span className="font-medium text-score"> · {formatMangaStatus(node.status)}</span>}
           </p>
 
-          {visibleGenres.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1">
-              {visibleGenres.map((genre) => (
-                <span
-                  key={genre.id}
-                  className="rounded-full bg-surface-muted px-2 py-0.5 text-[0.65rem] font-medium text-muted sm:text-xs"
-                >
-                  {genre.name}
-                </span>
-              ))}
-              {extraGenreCount > 0 && <span className="text-[0.65rem] text-muted sm:text-xs">+{extraGenreCount}</span>}
-            </div>
-          )}
+          <GenreChips genres={node.genres} title={node.title} variant="muted" />
 
           {(node.mean !== undefined || myScore > 0) && (
             <div className="flex items-center gap-2">

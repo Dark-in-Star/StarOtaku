@@ -85,6 +85,16 @@ test.describe("My lists (logged in)", () => {
     await row.getByRole("button", { name: "Increase episodes watched" }).click();
 
     await expect(row.getByText("6 / 24 ep")).toBeVisible();
+    await expect(page).toHaveURL(/\/mylist/);
+  });
+
+  test("clicking anywhere on a row opens the anime details page", async ({ page, baseURL }) => {
+    await loginAs(page, baseURL!);
+    await page.goto("/mylist?media=anime");
+
+    await page.getByTestId("anime-list-row-1000").click();
+
+    await expect(page).toHaveURL(/\/anime\/1000$/);
   });
 
   test("the edit modal updates status and score, moving the entry to its new tab", async ({ page, baseURL }) => {
@@ -96,6 +106,7 @@ test.describe("My lists (logged in)", () => {
 
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: "Mock Anime 2" })).toBeVisible();
+    await expect(page).toHaveURL(/\/mylist/);
     await dialog.getByRole("button", { name: "On Hold" }).click();
     await dialog.getByRole("button", { name: "Score 7" }).click();
     await dialog.getByRole("button", { name: "Save" }).click();
