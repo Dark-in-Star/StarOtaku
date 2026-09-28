@@ -5,7 +5,18 @@ vi.mock("./session", () => ({
 }));
 
 import { getValidAccessToken } from "./session";
-import { ApiError, AuthRequiredError, getAnimeList, getAnimeRanking, getAnime, getMyUserInfo, searchAnime } from "./api";
+import {
+  ApiError,
+  AuthRequiredError,
+  getAnimeList,
+  getAnimeRanking,
+  getAnime,
+  getMangaRanking,
+  getMyUserInfo,
+  getSeasonalAnime,
+  searchAnime,
+  searchManga,
+} from "./api";
 
 const originalFetch = global.fetch;
 const mockGetValidAccessToken = vi.mocked(getValidAccessToken);
@@ -63,6 +74,25 @@ describe("getAnimeRanking", () => {
     const [url] = fetchMock.mock.calls[0] as [string];
     expect(url).toContain("ranking_type=airing");
     expect(url).toContain("limit=5");
+  });
+});
+
+describe("browse endpoints", () => {
+  // MAL drops gray/black titles from search and seasonal results without nsfw=true, even
+  // for a logged-in caller — nothing on MAL should be unreachable from browse.
+  it.each([
+    ["searchAnime", () => searchAnime("kuroinu")],
+    ["searchManga", () => searchManga("kuroinu")],
+    ["getAnimeRanking", () => getAnimeRanking("all")],
+    ["getMangaRanking", () => getMangaRanking("all")],
+    ["getSeasonalAnime", () => getSeasonalAnime(2020, "winter")],
+  ])("%s asks for nsfw entries", async (_name, call) => {
+    const fetchMock = mockFetchOnce({ data: [] });
+
+    await call();
+
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(new URL(url).searchParams.get("nsfw")).toBe("true");
   });
 });
 

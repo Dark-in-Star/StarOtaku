@@ -167,16 +167,14 @@ function malSearchQuery(q: string): string {
   return q.padEnd(MAL_MIN_QUERY_LENGTH, ".");
 }
 
-// MAL's client-ID-only (no user token) mode appears to always exclude NSFW-flagged
-// content (verified: searching a well-known Hentai title returns zero results with just
-// a client ID, even though the title and its genre both exist on MAL). Opportunistically
-// attaching a logged-in visitor's own token — same as getAnime/getManga already do for
-// detail pages — is the only lever this app has to surface it, and still depends on that
-// visitor's own MAL account having adult-content display enabled.
+// Every browse endpoint sends nsfw=true: MAL silently drops "gray"/"black" titles from
+// search and seasonal results otherwise, with or without a user token (verified live:
+// searching "kuroinu" returns zero anime without it, and Winter 2020 loses 30 of 335
+// entries). The token is attached only so logged-in visitors get my_list_status back.
 export async function searchAnime(q: string, limit = 24, fields = ANIME_LIST_FIELDS, offset = 0) {
   const token = (await getValidAccessToken()) ?? undefined;
   return apiGet<MalListResponse<{ node: AnimeNode }>>("/anime", {
-    query: { q: malSearchQuery(q), limit, offset, fields },
+    query: { q: malSearchQuery(q), limit, offset, fields, nsfw: true },
     token,
   });
 }
@@ -203,7 +201,7 @@ export async function getAnimeRelations(id: number) {
 export async function getAnimeRanking(rankingType: AnimeRankingType, limit = 24, fields = ANIME_LIST_FIELDS, offset = 0) {
   const token = (await getValidAccessToken()) ?? undefined;
   return apiGet<MalListResponse<RankingNode<AnimeNode>>>("/anime/ranking", {
-    query: { ranking_type: rankingType, limit, offset, fields },
+    query: { ranking_type: rankingType, limit, offset, fields, nsfw: true },
     token,
   });
 }
@@ -218,7 +216,7 @@ export async function getSeasonalAnime(
 ) {
   const token = (await getValidAccessToken()) ?? undefined;
   return apiGet<MalListResponse<{ node: AnimeNode }>>(`/anime/season/${year}/${season}`, {
-    query: { sort, limit, offset, fields },
+    query: { sort, limit, offset, fields, nsfw: true },
     token,
   });
 }
@@ -226,7 +224,7 @@ export async function getSeasonalAnime(
 export async function searchManga(q: string, limit = 24, fields = MANGA_LIST_FIELDS, offset = 0) {
   const token = (await getValidAccessToken()) ?? undefined;
   return apiGet<MalListResponse<{ node: MangaNode }>>("/manga", {
-    query: { q: malSearchQuery(q), limit, offset, fields },
+    query: { q: malSearchQuery(q), limit, offset, fields, nsfw: true },
     token,
   });
 }
@@ -239,7 +237,7 @@ export async function getManga(id: number, fields = MANGA_DETAIL_FIELDS) {
 export async function getMangaRanking(rankingType: MangaRankingType, limit = 24, fields = MANGA_LIST_FIELDS, offset = 0) {
   const token = (await getValidAccessToken()) ?? undefined;
   return apiGet<MalListResponse<RankingNode<MangaNode>>>("/manga/ranking", {
-    query: { ranking_type: rankingType, limit, offset, fields },
+    query: { ranking_type: rankingType, limit, offset, fields, nsfw: true },
     token,
   });
 }
