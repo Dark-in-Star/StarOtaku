@@ -128,7 +128,32 @@ const SEARCH_MARKDOWN = `Markdown Content:
 
 [Kingdom of Zombie](https://weebcentral.com/series/01J76XY800718ZGG7EVQR74DXE/Kingdom-Of-Zombie)`;
 
+// The same list with x-with-links-summary, as the reader returns it for a very large series:
+// the inline content has no links at all, only the appended summary does.
+const LARGE_CHAPTERS_MARKDOWN = `Markdown Content:
+ Chapter 1194  Last Read  2026-09-26T03:16:36.809782Z
+ Chapter 1193  Last Read  2026-09-11T04:49:26.455865Z
+
+Links/Buttons:
+- [Chapter 1194 Last Read 2026-09-26T03:16:36.809782Z](https://weebcentral.com/chapters/01M3DVDYA933SQQ6703XQYMMGQ)
+- [Chapter 1193 Last Read 2026-09-11T04:49:26.455865Z](https://weebcentral.com/chapters/01M27CS4DQ1JVQDGARQJVK76EQ)
+- [Chapter 1 Last Read 2024-09-07T17:04:15.717343Z](https://weebcentral.com/chapters/01J76XYYR7VK2XCSHBZT8BZ4C2)
+- [](https://weebcentral.com/series/01J76XY7E9FNDZ1DBBM6PBJPFK/full-chapter-list#top)`;
+
 describe("WeebCentral markdown parsers (reader fallback)", () => {
+  it("reads a huge list from the links summary when the inline markdown has no links", () => {
+    expect(parseChapterListMarkdown(LARGE_CHAPTERS_MARKDOWN).map((c) => [c.id, c.label, c.number, c.publishedAt])).toEqual([
+      ["01J76XYYR7VK2XCSHBZT8BZ4C2", "Chapter 1", 1, "2024-09-07T17:04:15.717343Z"],
+      ["01M27CS4DQ1JVQDGARQJVK76EQ", "Chapter 1193", 1193, "2026-09-11T04:49:26.455865Z"],
+      ["01M3DVDYA933SQQ6703XQYMMGQ", "Chapter 1194", 1194, "2026-09-26T03:16:36.809782Z"],
+    ]);
+  });
+
+  it("uses the summary alone when both it and inline links are present, so nothing is doubled", () => {
+    const both = `${CHAPTERS_MARKDOWN}\n\nLinks/Buttons:\n- [Chapter 147 Last Read 2025-10-15T01:02:34.107778Z](https://weebcentral.com/chapters/01K7JP7T3V8ZVZJSGF99FFH55K)`;
+    expect(parseChapterListMarkdown(both).map((c) => c.id)).toEqual(["01K7JP7T3V8ZVZJSGF99FFH55K"]);
+  });
+
   it("reads every chapter, oldest-first, with labels and dates", () => {
     expect(parseChapterListMarkdown(CHAPTERS_MARKDOWN).map((c) => [c.id, c.label, c.number, c.publishedAt])).toEqual([
       ["01J76XZ3VG696B7Y02NABJ0XA3", "Chapter 1", 1, "2024-09-07T17:04:15.717343Z"],

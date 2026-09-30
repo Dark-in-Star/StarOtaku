@@ -33,5 +33,9 @@ of them shows up in unit tests against fixtures.
   Those two use Jina's markdown mode and the `*Markdown` parsers, and callers pick the parser by
   `result.via`. A fragment with a single root (chapter images) is fine in HTML mode. Any new fragment
   endpoint must be checked through the fallback, not just directly.
+- **Jina's markdown drops inline links on very large pages** (One Piece's 1,194-chapter list,
+  2.2 MB), leaving bare text. The chapter list is therefore requested with `x-with-links-summary`
+  and parsed from the appended `Links/Buttons:` list first. Test the fallback on a long series as
+  well as a short one.
 - **Live checks:** `scripts/reader-live/` runs the real sources. Run the vitest live config and the
   Playwright reader config (port 3011) before changing matching or parsing, never `pnpm test` alone.

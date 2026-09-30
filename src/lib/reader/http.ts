@@ -41,6 +41,8 @@ interface SourceFetchOptions {
    * multi-root htmx fragment must use markdown and be parsed from that.
    */
   readerFormat?: "text" | "html" | "markdown";
+  /** Extra reader options, e.g. `x-with-links-summary`. */
+  readerHeaders?: Record<string, string>;
 }
 
 async function fetchDirect(url: string, options: SourceFetchOptions): Promise<FetchResult | null> {
@@ -72,7 +74,7 @@ async function fetchDirect(url: string, options: SourceFetchOptions): Promise<Fe
 async function fetchViaReader(url: string, options: SourceFetchOptions): Promise<FetchResult | null> {
   try {
     const response = await fetch(`${READER_PROXY_BASE_URL}${url}`, {
-      headers: { Accept: "text/plain", "x-respond-with": options.readerFormat ?? "text" },
+      headers: { Accept: "text/plain", "x-respond-with": options.readerFormat ?? "text", ...options.readerHeaders },
       cache: "force-cache",
       next: { revalidate: options.revalidate },
       signal: AbortSignal.timeout(READER_TIMEOUT_MS),

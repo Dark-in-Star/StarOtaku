@@ -36,8 +36,13 @@ export interface WeebCentralSeries {
 // chapter), which the reader's HTML mode truncates to the first element — verified on Vercel:
 // every series showed exactly one chapter. Those two go through its markdown mode instead, so
 // callers must check `via` to know which parser applies.
-function html(url: string, revalidate: number, readerFormat: "html" | "markdown" = "html") {
-  return fetchSource(url, { headers: HEADERS, revalidate, readerFallback: true, readerFormat });
+function html(
+  url: string,
+  revalidate: number,
+  readerFormat: "html" | "markdown" = "html",
+  readerHeaders?: Record<string, string>,
+) {
+  return fetchSource(url, { headers: HEADERS, revalidate, readerFallback: true, readerFormat, readerHeaders });
 }
 
 export function parseSearchResults(body: string): WeebCentralSearchHit[] {
@@ -109,7 +114,28 @@ export function parseChapterList(body: string): ReaderChapter[] {
  * The reader's markdown rendering of the chapter list, one link per chapter:
  * `[![Image 1](badge.svg)Chapter 147 Last Read![Image 2](new.svg)2025-10-15T01:02:34Z](…/chapters/ID)`
  */
+function chapterFromLinkText(id: string, text: string): ReaderChapter {
+  const publishedAt = /\d{4}-\d{2}-\d{2}T[\d:.]+Z/.exec(text)?.[0];
+  const label = text.split(/\s+Last Read\b/)[0].replace(publishedAt ?? "", "").trim();
+  return { source: "weebcentral", id, number: parseChapterNumber(label), label, publishedAt };
+}
+
 export function parseChapterListMarkdown(body: string): ReaderChapter[] {
+  // Preferred: the reader's appended "Links/Buttons:" list (x-with-links-summary). Its inline
+  // markdown drops the links altogether once a page is large — verified on One Piece's
+  // 1,194-chapter list (2.2 MB), which came back as bare text with no chapter ids.
+  const summary = body.split(/^Links\/Buttons:\s*$/m)[1];
+  if (summary !== undefined) {
+    const seen = new Set<string>();
+    const fromSummary: ReaderChapter[] = [];
+    for (const match of summary.matchAll(/\[([^[\]]*)\]\(https:\/\/weebcentral\.com\/chapters\/([0-9A-Z]{26})\)/g)) {
+      if (seen.has(match[2])) continue;
+      seen.add(match[2]);
+      fromSummary.push(chapterFromLinkText(match[2], match[1]));
+    }
+    if (fromSummary.length > 0) return fromSummary.reverse();
+  }
+
   const chapters: ReaderChapter[] = [];
   const pattern =
     /\]\([^)]*\)([^!\[\]]+?)(?:\s*Last Read)?\s*(?:!\[[^\]]*\]\([^)]*\))?\s*(\d{4}-\d{2}-\d{2}T[\d:.]+Z)?\]\(https:\/\/weebcentral\.com\/chapters\/([0-9A-Z]{26})\)/g;
@@ -147,7 +173,9 @@ export async function getWeebCentralSeries(seriesId: string): Promise<WeebCentra
 }
 
 export async function getWeebCentralChapters(seriesId: string): Promise<ReaderChapter[]> {
-  const result = await html(`${BASE_URL}/series/${seriesId}/full-chapter-list`, CHAPTER_LIST_REVALIDATE, "markdown");
+  const result = await html(`${BASE_URL}/series/${seriesId}/full-chapter-list`, CHAPTER_LIST_REVALIDATE, "markdown", {
+    "x-with-links-summary": "true",
+  });
   if (result.status !== "ok") return [];
   return result.via === "reader" ? parseChapterListMarkdown(result.body) : parseChapterList(result.body);
 }
