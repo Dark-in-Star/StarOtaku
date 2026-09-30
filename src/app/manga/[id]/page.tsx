@@ -36,6 +36,7 @@ export async function generateMetadata({
 export default async function MangaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [manga, session] = await Promise.all([loadManga(Number(id)), getSession()]);
+  const chaptersRead = session ? (manga.my_list_status?.num_chapters_read ?? 0) : 0;
   const authors = manga.authors?.map((a) => `${a.node.first_name} ${a.node.last_name}`.trim()).join(", ");
 
   return (
@@ -87,10 +88,11 @@ export default async function MangaDetailPage({ params }: { params: Promise<{ id
             {/* Novels have no page images on any reader source. */}
             {isReadableMediaType(manga.media_type) && (
               <Link
-                href={`/manga/${manga.id}/read`}
+                // With progress on MAL, jump straight to the next unread chapter.
+                href={chaptersRead > 0 ? `/manga/${manga.id}/read?continue=1` : `/manga/${manga.id}/read`}
                 className="flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold transition-colors text-white hover:bg-primary/80"
               >
-                <BookOpen className="size-4" /> Read Now
+                <BookOpen className="size-4" /> {chaptersRead > 0 ? `Continue Reading · Ch. ${chaptersRead + 1}` : "Read Now"}
               </Link>
             )}
 

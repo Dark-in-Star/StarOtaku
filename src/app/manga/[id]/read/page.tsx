@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowLeft, BookOpen, ExternalLink } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { ApiError, getManga } from "@/lib/api";
+import { getSession } from "@/lib/session";
+import { resumeChapter } from "@/lib/readProgress";
+import { ChapterList } from "@/components/ChapterList";
 import { isReaderSource, resolveReadableManga, SOURCE_LABELS, type ReaderSourceId, type SourceOutcome } from "@/lib/reader";
 import { cookies } from "next/headers";
 import {
@@ -49,13 +52,10 @@ export default async function ReadMangaPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ source?: string; page?: string; order?: string }>;
+  searchParams: Promise<{ source?: string; page?: string; order?: string; continue?: string }>;
 }) {
-  const [{ id }, { source: requested, page: rawPage, order: rawOrder }, cookieStore] = await Promise.all([
-    params,
-    searchParams,
-    cookies(),
-  ]);
+  const [{ id }, { source: requested, page: rawPage, order: rawOrder, continue: wantsContinue }, cookieStore, session] =
+    await Promise.all([params, searchParams, cookies(), getSession()]);
   const order = parseChapterOrder(rawOrder) ?? parseChapterOrder(cookieStore.get(CHAPTER_ORDER_COOKIE)?.value) ?? "oldest";
   const manga = await loadManga(Number(id));
   const target = readerTargetFromManga(manga);
@@ -77,6 +77,15 @@ export default async function ReadMangaPage({
     return `/manga/${manga.id}/read?${query}`;
   };
   const pageHref = (p: number) => listHref(p);
+  const read = session ? (manga.my_list_status?.num_chapters_read ?? 0) : 0;
+  const chapterHref = { prefix: `/manga/${manga.id}/read/`, suffix: `?order=${order}` };
+
+  // "Continue Reading" on the detail page lands here: open the next unread chapter directly
+  // rather than making the reader find it in the list.
+  if (wantsContinue && series) {
+    const next = resumeChapter(series.chapters, read);
+    if (next) redirect(`${chapterHref.prefix}${next.source}/${next.id}${chapterHref.suffix}`);
+  }
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -131,55 +140,34 @@ export default async function ReadMangaPage({
       </div>
 
       {series ? (
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-muted">
-              {totalPages > 1
-                ? `Showing ${(page - 1) * CHAPTERS_PER_PAGE + 1}–${(page - 1) * CHAPTERS_PER_PAGE + chapters.length} of ${allChapters.length} chapters`
-                : `${allChapters.length} ${allChapters.length === 1 ? "chapter" : "chapters"}`}
-            </p>
-            {allChapters.length > 1 && (
-              // Switching order starts over on page 1: the old page number would land on
-              // unrelated chapters once the list is flipped.
-              <ChapterOrderToggle order={order} hrefFor={{ oldest: listHref(1, "oldest"), newest: listHref(1, "newest") }} />
-            )}
-          </div>
-          <Pagination page={page} totalPages={totalPages} href={pageHref} />
-          <ol className="divide-y divide-border rounded-xl border border-border bg-surface" data-testid="reader-chapters">
-            {chapters.map((chapter) => (
-              <li key={`${chapter.source}-${chapter.id}`}>
-                {chapter.externalUrl ? (
-                  <a
-                    href={chapter.externalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-muted hover:bg-surface-muted"
-                  >
-                    <span className="truncate">{chapter.label}</span>
-                    <span className="flex shrink-0 items-center gap-1 text-xs">
-                      Official site <ExternalLink className="size-3" />
-                    </span>
-                  </a>
-                ) : (
-                  <Link
-                    href={`/manga/${manga.id}/read/${chapter.source}/${chapter.id}?order=${order}`}
-                    className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-surface-muted"
-                    data-chapter-id={chapter.id}
-                    prefetch={false}
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <BookOpen className="size-3.5 shrink-0 text-muted" />
-                      <span className="truncate font-medium text-foreground">{chapter.label}</span>
-                      {chapter.title && <span className="truncate text-muted">{chapter.title}</span>}
-                    </span>
-                    {chapter.group && <span className="shrink-0 truncate text-xs text-muted">{chapter.group}</span>}
-                  </Link>
+        <ChapterList
+          mangaId={manga.id}
+          chapters={chapters}
+          readingOrder={series.chapters.map(({ id, number, label, externalUrl, source }) => ({ id, number, label, externalUrl, source }))}
+          chapterHref={chapterHref}
+          isAuthenticated={Boolean(session)}
+          loginHref={`/auth/login?returnTo=${encodeURIComponent(`/manga/${manga.id}/read`)}`}
+          initial={{ read, status: manga.my_list_status?.status }}
+          total={manga.num_chapters || undefined}
+          header={
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-muted">
+                  {totalPages > 1
+                    ? `Showing ${(page - 1) * CHAPTERS_PER_PAGE + 1}–${(page - 1) * CHAPTERS_PER_PAGE + chapters.length} of ${allChapters.length} chapters`
+                    : `${allChapters.length} ${allChapters.length === 1 ? "chapter" : "chapters"}`}
+                </p>
+                {allChapters.length > 1 && (
+                  // Switching order starts over on page 1: the old page number would land on
+                  // unrelated chapters once the list is flipped.
+                  <ChapterOrderToggle order={order} hrefFor={{ oldest: listHref(1, "oldest"), newest: listHref(1, "newest") }} />
                 )}
-              </li>
-            ))}
-          </ol>
-          <Pagination page={page} totalPages={totalPages} href={pageHref} />
-        </div>
+              </div>
+              <Pagination page={page} totalPages={totalPages} href={pageHref} />
+            </>
+          }
+          footer={<Pagination page={page} totalPages={totalPages} href={pageHref} />}
+        />
       ) : (
         <p className="rounded-xl border border-border bg-surface p-6 text-center text-sm text-muted">
           None of the reader sources carry this title in English.

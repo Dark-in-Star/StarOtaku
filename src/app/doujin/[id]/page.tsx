@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AdultConsentGate } from "@/components/AdultConsentGate";
-import { ReaderStrip } from "@/components/ReaderStrip";
+import { ChapterReader } from "@/components/ChapterReader";
 import { adultReaderEnabled, hasAdultConsent } from "@/lib/reader/adultGate";
 import { getNhentaiGallery, getNhentaiPages } from "@/lib/reader/nhentai";
 
@@ -21,11 +21,12 @@ export default async function DoujinGalleryPage({ params }: { params: Promise<{ 
 
   return (
     <div className="flex flex-col gap-4">
-      <ReaderStrip
+      <ChapterReader
         title={gallery.title.pretty || gallery.title.english}
         subtitle={`${gallery.num_pages} pages · ${gallery.num_favorites.toLocaleString()} favorites`}
         pages={pages}
         indexHref="/doujin"
+        defaultMode="paged"
       />
       <ul className="mx-auto flex max-w-3xl flex-wrap gap-1.5">
         {tags.map((tag) => (

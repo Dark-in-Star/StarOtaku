@@ -38,7 +38,10 @@ MyAnimeList — no new sign-up, no second source of truth, no data silo.
 ### 📖 Read without leaving the app
 - Hit **Read Now** on any manga, manhwa or manhua and open a chapter straight away
 - Finds each title on several sources and picks the most complete one, with a one-tap switch
-- Long-strip reader that works on phones and desktops, with next/previous chapter navigation
+- Page-by-page reader: swipe, tap an edge, use the arrow keys, or drag the slider; switch to a
+  long scroll for webtoons (the default for manhwa and manhua)
+- **Continue Reading** picks up at your next unread chapter, and finishing a chapter updates your
+  MyAnimeList progress. You can also tick chapters off in the list to catch up or undo.
 - Chapter lists paged and sortable oldest- or newest-first, remembered across titles
 
 ### ✅ Track your way

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   chapterListPage,
+  defaultReaderMode,
+  parseReaderMode,
   orderChapters,
   parseChapterOrder,
   dedupeChapters,
@@ -130,5 +132,20 @@ describe("orderChapters / parseChapterOrder", () => {
     expect(parseChapterOrder("oldest")).toBe("oldest");
     expect(parseChapterOrder("random")).toBeUndefined();
     expect(parseChapterOrder(undefined)).toBeUndefined();
+  });
+});
+
+describe("reader mode", () => {
+  it("defaults webtoon formats to scrolling and everything else to pages", () => {
+    expect(defaultReaderMode("manhwa")).toBe("scroll");
+    expect(defaultReaderMode("manhua")).toBe("scroll");
+    expect(defaultReaderMode("manga")).toBe("paged");
+    expect(defaultReaderMode(undefined)).toBe("paged");
+  });
+
+  it("accepts only the two known modes", () => {
+    expect(parseReaderMode("paged")).toBe("paged");
+    expect(parseReaderMode("scroll")).toBe("scroll");
+    expect(parseReaderMode("vertical")).toBeUndefined();
   });
 });

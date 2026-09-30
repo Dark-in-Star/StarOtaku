@@ -121,3 +121,20 @@ export function chapterListPage(chapters: ReaderChapter[], chapterId: string, or
   const position = order === "newest" ? chapters.length - 1 - index : index;
   return Math.floor(position / CHAPTERS_PER_PAGE) + 1;
 }
+
+export type ReaderMode = "paged" | "scroll";
+
+export const READER_MODE_COOKIE = "starotaku_reader_mode";
+
+export function parseReaderMode(value: string | undefined): ReaderMode | undefined {
+  return value === "paged" || value === "scroll" ? value : undefined;
+}
+
+/**
+ * Manhwa and manhua are overwhelmingly webtoons — one long vertical strip cut into slices —
+ * which only read naturally scrolled. Everything else is drawn as pages, which read best one
+ * at a time.
+ */
+export function defaultReaderMode(mediaType: string | undefined): ReaderMode {
+  return mediaType === "manhwa" || mediaType === "manhua" ? "scroll" : "paged";
+}
