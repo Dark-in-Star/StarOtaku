@@ -10,6 +10,8 @@ mistaken for new regressions:
 - **`e2e/responsive-nav.spec.ts`** — "mobile viewport hides inline nav links behind a hamburger
   toggle" expects a `Toggle menu` button. The hamburger was replaced by `BottomNav.tsx` +
   `MobileProfileSheet.tsx`; this test needs rewriting (or replacing) against the new mobile nav.
+- **`e2e/manga.spec.ts`** — "ranking dropdown switches the active ranking type" expects a
+  `Manga Rankings` heading that no longer exists anywhere in `src/` since the Browse rework.
 - **`e2e/mylist.spec.ts`** / **`e2e/anime.spec.ts`** — a handful of edit-modal / status-tab tests
   are flaky specifically on mobile/tablet viewports, independent of the shared-mock-state race
   in `testing-setup.md`. Root cause not yet diagnosed — worth investigating with

@@ -13,3 +13,4 @@ relevant file before touching an area it covers. See `AGENTS.md` for commands/co
 - [Testing setup](testing-setup.md) — Vitest + Playwright, the mock MAL server, and its parallel-worker caveat
 - [Known e2e gaps](known-e2e-gaps.md) — specs referencing UI that's since been replaced
 - [Link-prefetch GET mutation gotcha](link-prefetch-get-mutation-gotcha.md) — never wire a state-mutating route to `<Link href>`
+- [Manga reader sources](manga-reader-sources.md) — how titles are matched per source, and the third-party quirks that were real bugs

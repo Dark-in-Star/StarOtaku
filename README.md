@@ -35,6 +35,12 @@ MyAnimeList — no new sign-up, no second source of truth, no data silo.
 - Automatically falls back to an alternate source if a stream is blocked, so playback keeps working
 - Episode progress is tracked as you watch, syncing back to your MyAnimeList list
 
+### 📖 Read without leaving the app
+- Hit **Read Now** on any manga, manhwa or manhua and open a chapter straight away
+- Finds each title on several sources and picks the most complete one, with a one-tap switch
+- Long-strip reader that works on phones and desktops, with next/previous chapter navigation
+- Chapter lists paged and sortable oldest- or newest-first, remembered across titles
+
 ### ✅ Track your way
 - Full **My Anime List** and **My Manga List** management — status, score, and progress, edited
   inline without leaving the grid

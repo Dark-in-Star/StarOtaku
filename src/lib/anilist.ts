@@ -317,3 +317,32 @@ export async function getAnimeExtras(malId: number, revalidate = 3600): Promise<
     })),
   };
 }
+
+const MANGA_ID_QUERY = `
+  query ($malId: Int) {
+    Media(idMal: $malId, type: MANGA) { id }
+  }
+`;
+
+/**
+ * The AniList id for a MAL manga — the exact key the manga reader matches WeebCentral
+ * series on. Null when AniList doesn't know the title or can't be reached; the reader then
+ * falls back to a stricter title match rather than failing.
+ */
+export async function getAniListMangaId(malId: number, revalidate = 604_800): Promise<number | null> {
+  let response: Response;
+  try {
+    response = await fetch(ANILIST_API_URL, {
+      method: "POST",
+      headers: ANILIST_HEADERS,
+      body: JSON.stringify({ query: MANGA_ID_QUERY, variables: { malId } }),
+      next: { revalidate },
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    return null;
+  }
+  if (!response.ok) return null;
+  const json = (await response.json()) as { data?: { Media?: { id: number } | null } };
+  return json.data?.Media?.id ?? null;
+}
