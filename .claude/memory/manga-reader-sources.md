@@ -25,8 +25,13 @@ of them shows up in unit tests against fixtures.
   before adding a source.
 - **Choosing a source:** most readable chapters wins, not furthest chapter. MangaDex often has the
   latest chapter but big takedown gaps before it.
-- **Cloudflare / Vercel:** WeebCentral and nhentai are Cloudflare-fronted, so `fetchSource` falls back to
-  the Jina reader exactly like the anime streams do (see `streams.ts`). `READER_FORCE_FALLBACK=1` forces
-  that path locally.
+- **Cloudflare / Vercel:** WeebCentral *is* blocked from Vercel (confirmed in production), so every
+  WeebCentral call there goes through the Jina reader, exactly like the anime streams (see `streams.ts`).
+  `READER_FORCE_FALLBACK=1` forces that path locally.
+- **Jina's HTML mode keeps only the first top-level element of a fragment.** WeebCentral's search results
+  and chapter list are multi-root htmx fragments, so on Vercel every series showed exactly one chapter.
+  Those two use Jina's markdown mode and the `*Markdown` parsers, and callers pick the parser by
+  `result.via`. A fragment with a single root (chapter images) is fine in HTML mode. Any new fragment
+  endpoint must be checked through the fallback, not just directly.
 - **Live checks:** `scripts/reader-live/` runs the real sources. Run the vitest live config and the
   Playwright reader config (port 3011) before changing matching or parsing, never `pnpm test` alone.

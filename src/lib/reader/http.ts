@@ -35,8 +35,12 @@ interface SourceFetchOptions {
    * Cloudflare blocks anyway.
    */
   readerFallback: boolean;
-  /** How the reader should hand the body back: verbatim JSON, or raw HTML. */
-  readerFormat?: "text" | "html";
+  /**
+   * How the reader should hand the body back: verbatim ("text", for JSON), re-serialized HTML,
+   * or markdown. Its HTML mode keeps only the first top-level element of a fragment, so any
+   * multi-root htmx fragment must use markdown and be parsed from that.
+   */
+  readerFormat?: "text" | "html" | "markdown";
 }
 
 async function fetchDirect(url: string, options: SourceFetchOptions): Promise<FetchResult | null> {

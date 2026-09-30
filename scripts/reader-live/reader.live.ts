@@ -222,13 +222,19 @@ describe(`reader live probe (seed ${SEED})`, () => {
         ? chapterChecks.filter((c) => c.source === readable.primary!.source).every((c) => c.pages > 0 && c.images.every((i) => i.ok))
         : false;
       if (chapterChecks.some((c) => c.pages === 0)) notes.push("a chapter returned 0 pages");
+      // WeebCentral carries whole series, so one chapter for a long MAL entry means a parser lost
+      // the rest — exactly how the reader fallback's truncated HTML shipped once, looking "readable".
+      const wc = readable.outcomes.weebcentral;
+      const truncated =
+        wc?.status === "found" && readableChapterCount(wc.series.chapters) <= 1 && (manga.num_chapters ?? 0) > 5;
+      if (truncated) notes.push("WeebCentral returned a single chapter for a long series (truncated list?)");
       if (chapterChecks.some((c) => c.images.some((i) => !i.ok))) notes.push("an image failed");
       if (!allImagesOk && primaryOk) notes.push("primary fine; a secondary source failed");
 
       const verdict: TitleResult["verdict"] = Object.keys(readable.outcomes).length === 0
         ? "skipped"
         : readable.primary
-          ? primaryOk
+          ? primaryOk && !truncated
             ? "readable"
             : "broken"
           : "not-carried";

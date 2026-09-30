@@ -32,8 +32,12 @@ export interface WeebCentralSeries {
   adult: boolean;
 }
 
-function html(url: string, revalidate: number) {
-  return fetchSource(url, { headers: HEADERS, revalidate, readerFallback: true, readerFormat: "html" });
+// Search results and the chapter list are multi-root fragments (one element per hit or
+// chapter), which the reader's HTML mode truncates to the first element — verified on Vercel:
+// every series showed exactly one chapter. Those two go through its markdown mode instead, so
+// callers must check `via` to know which parser applies.
+function html(url: string, revalidate: number, readerFormat: "html" | "markdown" = "html") {
+  return fetchSource(url, { headers: HEADERS, revalidate, readerFallback: true, readerFormat });
 }
 
 export function parseSearchResults(body: string): WeebCentralSearchHit[] {
@@ -45,6 +49,25 @@ export function parseSearchResults(body: string): WeebCentralSearchHit[] {
     if (!link || seen.has(link[1])) continue;
     seen.add(link[1]);
     hits.push({ seriesId: link[1], title: alt ? decodeHtmlEntities(alt[1]) : "" });
+  }
+  return hits;
+}
+
+/**
+ * The reader's markdown rendering of search results. Hits are found by their series URL rather
+ * than by link text, because titles can contain brackets themselves ("[Oshi No Ko]") and break
+ * any `[text](url)` pattern. The title comes from the cover's alt text ("Image 1: X cover"),
+ * or from the URL slug if that's missing.
+ */
+export function parseSearchResultsMarkdown(body: string): WeebCentralSearchHit[] {
+  const hits: WeebCentralSearchHit[] = [];
+  const seen = new Set<string>();
+  for (const match of body.matchAll(/\]\(https:\/\/weebcentral\.com\/series\/([0-9A-Z]{26})(?:\/([^)]*))?\)/g)) {
+    const [, seriesId, slug = ""] = match;
+    if (seen.has(seriesId)) continue;
+    seen.add(seriesId);
+    const alt = new RegExp(`Image \\d+: (.+?) cover\\]\\([^)]*${seriesId}`).exec(body);
+    hits.push({ seriesId, title: alt ? alt[1].trim() : slug.replace(/-/g, " ") });
   }
   return hits;
 }
@@ -82,6 +105,21 @@ export function parseChapterList(body: string): ReaderChapter[] {
   return chapters.reverse();
 }
 
+/**
+ * The reader's markdown rendering of the chapter list, one link per chapter:
+ * `[![Image 1](badge.svg)Chapter 147 Last Read![Image 2](new.svg)2025-10-15T01:02:34Z](…/chapters/ID)`
+ */
+export function parseChapterListMarkdown(body: string): ReaderChapter[] {
+  const chapters: ReaderChapter[] = [];
+  const pattern =
+    /\]\([^)]*\)([^!\[\]]+?)(?:\s*Last Read)?\s*(?:!\[[^\]]*\]\([^)]*\))?\s*(\d{4}-\d{2}-\d{2}T[\d:.]+Z)?\]\(https:\/\/weebcentral\.com\/chapters\/([0-9A-Z]{26})\)/g;
+  for (const match of body.matchAll(pattern)) {
+    const label = match[1].trim();
+    chapters.push({ source: "weebcentral", id: match[3], number: parseChapterNumber(label), label, publishedAt: match[2] });
+  }
+  return chapters.reverse();
+}
+
 export function parseChapterImages(body: string): ReaderPage[] {
   return [...body.matchAll(/<img\s+src="(https?:\/\/[^"]+)"[^>]*alt="Page \d+"/g)].map((m) => ({ url: m[1] }));
 }
@@ -98,8 +136,9 @@ export async function searchWeebCentral(text: string): Promise<WeebCentralSearch
     adult: "Any",
     display_mode: "Full Display",
   });
-  const result = await html(`${BASE_URL}/search/data?${params}`, SEARCH_REVALIDATE);
-  return result.status === "ok" ? parseSearchResults(result.body) : [];
+  const result = await html(`${BASE_URL}/search/data?${params}`, SEARCH_REVALIDATE, "markdown");
+  if (result.status !== "ok") return [];
+  return result.via === "reader" ? parseSearchResultsMarkdown(result.body) : parseSearchResults(result.body);
 }
 
 export async function getWeebCentralSeries(seriesId: string): Promise<WeebCentralSeries | null> {
@@ -108,8 +147,9 @@ export async function getWeebCentralSeries(seriesId: string): Promise<WeebCentra
 }
 
 export async function getWeebCentralChapters(seriesId: string): Promise<ReaderChapter[]> {
-  const result = await html(`${BASE_URL}/series/${seriesId}/full-chapter-list`, CHAPTER_LIST_REVALIDATE);
-  return result.status === "ok" ? parseChapterList(result.body) : [];
+  const result = await html(`${BASE_URL}/series/${seriesId}/full-chapter-list`, CHAPTER_LIST_REVALIDATE, "markdown");
+  if (result.status !== "ok") return [];
+  return result.via === "reader" ? parseChapterListMarkdown(result.body) : parseChapterList(result.body);
 }
 
 export async function getWeebCentralPages(chapterId: string): Promise<ReaderPage[]> {
