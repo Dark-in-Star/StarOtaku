@@ -118,6 +118,7 @@ export function MediaCardAddButton({
           <MangaListEditModal
             node={entry.node as MangaNode}
             listStatus={entry.listStatus as MyMangaListStatusNode}
+            isNew={!added}
             open
             onOpenChange={closeModal}
             onSaved={(update) => setStatus(update.status ?? status ?? "reading")}

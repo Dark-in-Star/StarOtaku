@@ -28,7 +28,7 @@ test.describe("Manga browsing", () => {
     await page.goto("/browse?media=manga&type=all");
     await page.locator('a[href^="/manga/"]').first().click();
 
-    await expect(page.getByText("Your list status")).toBeVisible();
-    await expect(page.getByLabel("Status")).toBeVisible();
+    // The panel shows "Add to List" for an entry not on the list yet, and an edit button for one that is.
+    await expect(page.getByRole("button", { name: /Add to List|Edit list entry/ })).toBeVisible();
   });
 });

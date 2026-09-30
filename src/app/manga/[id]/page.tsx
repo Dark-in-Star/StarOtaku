@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
+import { BookOpen, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { ApiError, getManga } from "@/lib/api";
 import { getSession } from "@/lib/session";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { InfoRow } from "@/components/InfoRow";
 import { GenreTags } from "@/components/GenreTags";
-import { MangaListStatusEditor } from "@/components/MangaListStatusEditor";
+import { MangaListStatusPanel } from "@/components/MangaListStatusPanel";
+import { isReadableMediaType } from "@/lib/reader/chapters";
 import { MediaRow, MediaRowItem } from "@/components/MediaRow";
 import { MediaCard } from "@/components/MediaCard";
 import { formatCompactNumber, formatDateRange, formatMangaStatus, formatMediaType } from "@/lib/format";
@@ -80,19 +83,43 @@ export default async function MangaDetailPage({ params }: { params: Promise<{ id
 
           <GenreTags genres={manga.genres} />
 
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Novels have no page images on any reader source. */}
+            {isReadableMediaType(manga.media_type) && (
+              <Link
+                href={`/manga/${manga.id}/read`}
+                className="flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold transition-colors text-white hover:bg-primary/80"
+              >
+                <BookOpen className="size-4" /> Read Now
+              </Link>
+            )}
+
+            <a
+              href={`https://myanimelist.net/manga/${manga.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open in MyAnimeList"
+              className="flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-accent hover:text-accent sm:px-4"
+            >
+              <Image
+                src="https://cdn.myanimelist.net/img/sp/icon/apple-touch-icon-256.png"
+                alt=""
+                width={16}
+                height={16}
+                className="rounded-sm"
+              />
+              <span className="hidden sm:inline">Open in MyAnimeList</span>
+              <ExternalLink className="size-3.5 text-muted" />
+            </a>
+          </div>
+
           {manga.synopsis && <p className="max-w-3xl whitespace-pre-line text-sm leading-relaxed text-foreground">{manga.synopsis}</p>}
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="order-2 flex flex-col gap-4 lg:order-1">
-          <MangaListStatusEditor
-            mangaId={manga.id}
-            numChapters={manga.num_chapters}
-            numVolumes={manga.num_volumes}
-            initial={manga.my_list_status}
-            isAuthenticated={Boolean(session)}
-          />
+          <MangaListStatusPanel manga={manga} initial={manga.my_list_status} isAuthenticated={Boolean(session)} />
 
           <dl className="divide-y divide-border rounded-xl border border-border bg-surface px-4">
             <InfoRow label="Type">{formatMediaType(manga.media_type)}</InfoRow>
