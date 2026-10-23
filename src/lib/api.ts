@@ -179,10 +179,26 @@ export async function searchAnime(q: string, limit = 24, fields = ANIME_LIST_FIE
   });
 }
 
+/**
+ * The shared, impersonal view of an anime — no token, so the response is identical for
+ * every visitor and sits in the Data Cache for an hour.
+ *
+ * This is what the detail page body renders from. It reads no cookies, so the page can be
+ * prerendered; the per-visitor list state is fetched separately by AnimeListStatusSlot.
+ */
+export async function getAnimePublic(id: number, fields = ANIME_DETAIL_FIELDS) {
+  return apiGet<AnimeNode>(`/anime/${id}`, { query: { fields }, revalidate: 3600 });
+}
+
 export async function getAnime(id: number, fields = ANIME_DETAIL_FIELDS) {
   // Optional auth: logged-in visitors get my_list_status back too.
+  //
+  // No explicit `cache` here on purpose. A token-bearing response is personal and apiGet
+  // already forces no-store for it; pinning no-store unconditionally also defeated the
+  // Data Cache for the logged-out majority, so every anonymous detail view re-hit MAL and
+  // billed a full render. Anonymous responses now share a short-lived cache entry.
   const token = (await getValidAccessToken()) ?? undefined;
-  return apiGet<AnimeNode>(`/anime/${id}`, { query: { fields }, cache: "no-store", token });
+  return apiGet<AnimeNode>(`/anime/${id}`, { query: { fields }, revalidate: 3600, token });
 }
 
 // Relations effectively never change once a title is on MAL, so this narrow field set is
@@ -229,9 +245,14 @@ export async function searchManga(q: string, limit = 24, fields = MANGA_LIST_FIE
   });
 }
 
+/** The shared, impersonal view of a manga — see getAnimePublic. */
+export async function getMangaPublic(id: number, fields = MANGA_DETAIL_FIELDS) {
+  return apiGet<MangaNode>(`/manga/${id}`, { query: { fields }, revalidate: 3600 });
+}
+
 export async function getManga(id: number, fields = MANGA_DETAIL_FIELDS) {
   const token = (await getValidAccessToken()) ?? undefined;
-  return apiGet<MangaNode>(`/manga/${id}`, { query: { fields }, cache: "no-store", token });
+  return apiGet<MangaNode>(`/manga/${id}`, { query: { fields }, revalidate: 3600, token });
 }
 
 export async function getMangaRanking(rankingType: MangaRankingType, limit = 24, fields = MANGA_LIST_FIELDS, offset = 0) {

@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import { BookOpen, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
-import { ApiError, getManga } from "@/lib/api";
-import { getSession } from "@/lib/session";
+import { Suspense } from "react";
+import { ApiError, getMangaPublic } from "@/lib/api";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { InfoRow } from "@/components/InfoRow";
 import { GenreTags } from "@/components/GenreTags";
-import { MangaListStatusPanel } from "@/components/MangaListStatusPanel";
+import {
+  MangaListStatusFallback,
+  MangaListStatusSlot,
+  MangaReadButton,
+  MangaReadButtonFallback,
+} from "@/components/MangaListStatusSlot";
 import { isReadableMediaType } from "@/lib/reader/chapters";
 import { MediaRow, MediaRowItem } from "@/components/MediaRow";
 import { MediaCard } from "@/components/MediaCard";
@@ -16,7 +20,7 @@ import { formatCompactNumber, formatDateRange, formatMangaStatus, formatMediaTyp
 
 async function loadManga(id: number) {
   try {
-    return await getManga(id);
+    return await getMangaPublic(id);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
@@ -35,8 +39,7 @@ export async function generateMetadata({
 
 export default async function MangaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [manga, session] = await Promise.all([loadManga(Number(id)), getSession()]);
-  const chaptersRead = session ? (manga.my_list_status?.num_chapters_read ?? 0) : 0;
+  const manga = await loadManga(Number(id));
   const authors = manga.authors?.map((a) => `${a.node.first_name} ${a.node.last_name}`.trim()).join(", ");
 
   return (
@@ -87,13 +90,9 @@ export default async function MangaDetailPage({ params }: { params: Promise<{ id
           <div className="flex flex-wrap items-center gap-3">
             {/* Novels have no page images on any reader source. */}
             {isReadableMediaType(manga.media_type) && (
-              <Link
-                // With progress on MAL, jump straight to the next unread chapter.
-                href={chaptersRead > 0 ? `/manga/${manga.id}/read?continue=1` : `/manga/${manga.id}/read`}
-                className="flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold transition-colors text-white hover:bg-primary/80"
-              >
-                <BookOpen className="size-4" /> {chaptersRead > 0 ? `Continue Reading · Ch. ${chaptersRead + 1}` : "Read Now"}
-              </Link>
+              <Suspense fallback={<MangaReadButtonFallback mangaId={manga.id} />}>
+                <MangaReadButton manga={manga} />
+              </Suspense>
             )}
 
             <a
@@ -121,7 +120,9 @@ export default async function MangaDetailPage({ params }: { params: Promise<{ id
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="order-2 flex flex-col gap-4 lg:order-1">
-          <MangaListStatusPanel manga={manga} initial={manga.my_list_status} isAuthenticated={Boolean(session)} />
+          <Suspense fallback={<MangaListStatusFallback />}>
+            <MangaListStatusSlot manga={manga} />
+          </Suspense>
 
           <dl className="divide-y divide-border rounded-xl border border-border bg-surface px-4">
             <InfoRow label="Type">{formatMediaType(manga.media_type)}</InfoRow>

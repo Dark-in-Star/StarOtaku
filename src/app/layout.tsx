@@ -1,12 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
-import { NavBar } from "@/components/NavBar";
-import { BottomNav } from "@/components/BottomNav";
+import { NavBar, NavBarFallback } from "@/components/NavBar";
+import { NavAccount, NavAccountFallback } from "@/components/NavAccount";
+import { BottomNav, BottomNavFallback } from "@/components/BottomNav";
 import { Footer } from "@/components/Footer";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
-import { Providers } from "./Providers";
-import { getMyUserInfo } from "@/lib/api";
-import { getSession } from "@/lib/session";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -49,22 +48,7 @@ const THEME_INIT_SCRIPT = `
   })();
 `;
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const session = await getSession();
-
-  let pictureUrl: string | undefined;
-  let userName: string | undefined;
-  if (session) {
-    try {
-      const user = await getMyUserInfo("picture");
-      pictureUrl = user.picture;
-      userName = user.name;
-    } catch {
-      // Session cookie present but the profile fetch failed (e.g. a revoked token
-      // middleware hasn't caught yet) — fall back to the icon-only avatar state.
-    }
-  }
-
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
@@ -75,13 +59,21 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <Providers>
-          <NavBar isAuthenticated={Boolean(session)} pictureUrl={pictureUrl} userName={userName} />
-          <main className="mx-auto w-full max-w-7xl flex-1 px-3 pt-2 pb-6 sm:px-6 sm:py-8">{children}</main>
-          <Footer />
-          <div className="h-16 lg:hidden" aria-hidden="true" />
+        <Suspense fallback={<NavBarFallback account={<NavAccountFallback />} />}>
+          <NavBar
+            account={
+              <Suspense fallback={<NavAccountFallback />}>
+                <NavAccount />
+              </Suspense>
+            }
+          />
+        </Suspense>
+        <main className="mx-auto w-full max-w-7xl flex-1 px-3 pt-2 pb-6 sm:px-6 sm:py-8">{children}</main>
+        <Footer />
+        <div className="h-16 lg:hidden" aria-hidden="true" />
+        <Suspense fallback={<BottomNavFallback />}>
           <BottomNav />
-        </Providers>
+        </Suspense>
         <ServiceWorkerRegister />
       </body>
     </html>

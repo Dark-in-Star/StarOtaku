@@ -69,9 +69,12 @@ export function MediaCard({
         <span className="absolute right-2 top-2 rounded-lg bg-surface/90 px-2 py-0.5 text-xs font-bold text-foreground shadow-sm">
           {subtitle ?? formatMediaType(mediaType)}
         </span>
-        <div className="absolute bottom-2 left-2">
-          <ScoreBadge mean={mean} />
-        </div>
+        {/* Unaired titles have no score yet — an "N/A" star badge is just noise there. */}
+        {mean !== undefined && (
+          <div className="absolute bottom-2 left-2">
+            <ScoreBadge mean={mean} />
+          </div>
+        )}
         {canAdd && (
           <MediaCardAddButton
             id={id}

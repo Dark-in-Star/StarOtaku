@@ -13,9 +13,11 @@ const ICONS: Record<string, typeof Home> = {
   "/mylist": Bookmark,
 };
 
-export function BottomNav() {
-  const pathname = usePathname();
-
+/**
+ * The bar itself, with `pathname` supplied rather than read, so the prerendered shell can
+ * render it with nothing active and the real highlight can stream in.
+ */
+function BottomNavBar({ pathname }: { pathname: string | null }) {
   return (
     <nav
       aria-label="Primary"
@@ -25,7 +27,7 @@ export function BottomNav() {
       <div className="mx-auto flex max-w-7xl items-stretch justify-around">
         {NAV_LINKS.map((link) => {
           const Icon = ICONS[link.href];
-          const active = isNavLinkActive(pathname, link.href);
+          const active = pathname !== null && isNavLinkActive(pathname, link.href);
           return (
             <Link
               key={link.href}
@@ -43,4 +45,13 @@ export function BottomNav() {
       </div>
     </nav>
   );
+}
+
+export function BottomNav() {
+  return <BottomNavBar pathname={usePathname()} />;
+}
+
+/** The same bar with nothing highlighted — what the static shell ships. */
+export function BottomNavFallback() {
+  return <BottomNavBar pathname={null} />;
 }

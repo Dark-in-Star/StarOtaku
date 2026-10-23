@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Turns on Partial Prerendering: a route's static shell is built once and served from
+  // the CDN, while the parts that read cookies resume and stream in per request.
+  //
+  // Without this, a single cookie read anywhere in a route — the account menu in the
+  // chrome, a list-status panel in a sidebar — marks the *entire* route dynamic, so every
+  // visit boots a function and re-renders the whole page. That was every route in this
+  // app, and it is what exhausted the plan's compute. The personal bits now sit behind
+  // <Suspense> (NavAccount, AnimeListStatusSlot, MangaListStatusSlot) so everything
+  // around them prerenders.
+  cacheComponents: true,
   images: {
     // Serve images straight from their origin instead of Vercel's optimizer.
     //

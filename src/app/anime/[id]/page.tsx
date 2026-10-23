@@ -16,14 +16,14 @@ import {
   Tv,
   Users,
 } from "lucide-react";
-import { ApiError, getAnime } from "@/lib/api";
+import { Suspense } from "react";
+import { ApiError, getAnimePublic } from "@/lib/api";
 import { getAnimeExtras, getNextAiringEpisode } from "@/lib/anilist";
-import { getSession } from "@/lib/session";
 import { sortRelatedAnime } from "@/lib/related";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { InfoRow } from "@/components/InfoRow";
 import { GenreTags } from "@/components/GenreTags";
-import { AnimeListStatusPanel } from "@/components/AnimeListStatusPanel";
+import { AnimeListStatusFallback, AnimeListStatusSlot } from "@/components/AnimeListStatusSlot";
 import { AnimeTrailer } from "@/components/AnimeTrailer";
 import { AnimeCharacters } from "@/components/AnimeCharacters";
 import { AnimeStaff } from "@/components/AnimeStaff";
@@ -40,7 +40,7 @@ import {
 
 async function loadAnime(id: number) {
   try {
-    return await getAnime(id);
+    return await getAnimePublic(id);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
@@ -59,9 +59,8 @@ export async function generateMetadata({
 
 export default async function AnimeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [anime, session, nextEpisode, extras] = await Promise.all([
+  const [anime, nextEpisode, extras] = await Promise.all([
     loadAnime(Number(id)),
-    getSession(),
     getNextAiringEpisode(Number(id)),
     getAnimeExtras(Number(id)),
   ]);
@@ -72,7 +71,9 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ id
 
   const sidebar = (
     <>
-      <AnimeListStatusPanel anime={anime} initial={anime.my_list_status} isAuthenticated={Boolean(session)} />
+      <Suspense fallback={<AnimeListStatusFallback />}>
+        <AnimeListStatusSlot anime={anime} />
+      </Suspense>
 
       {anime.status === "currently_airing" && nextEpisode && (
         <>

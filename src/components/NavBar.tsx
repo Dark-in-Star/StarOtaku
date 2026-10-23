@@ -5,23 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 import clsx from "clsx";
-import { AccountMenu } from "./AccountMenu";
 import { MobileMediaToggle } from "./MobileMediaToggle";
-import { MobileProfileSheet } from "./MobileProfileSheet";
 import { SearchBar } from "./SearchBar";
 import { ThemeToggle } from "./ThemeToggle";
 import { NAV_LINKS, isNavLinkActive } from "./nav-links";
 
-export function NavBar({
-  isAuthenticated,
-  pictureUrl,
-  userName,
-}: {
-  isAuthenticated: boolean;
-  pictureUrl?: string;
-  userName?: string;
-}) {
-  const pathname = usePathname();
+// `account` is the auth-dependent slot, passed in as a prop because it's a Server
+// Component: that keeps the cookie read out of this client tree and out of the layout, so
+// the surrounding chrome stays part of the prerendered shell.
+function NavBarInner({ account, pathname }: { account: React.ReactNode; pathname: string }) {
   const pageHasOwnSearch = pathname === "/" || pathname.startsWith("/mylist") || pathname.startsWith("/browse");
   const isMyList = pathname.startsWith("/mylist");
 
@@ -74,11 +66,22 @@ export function NavBar({
 
           <ThemeToggle />
 
-          <AccountMenu isAuthenticated={isAuthenticated} pictureUrl={pictureUrl} userName={userName} />
-
-          <MobileProfileSheet isAuthenticated={isAuthenticated} pictureUrl={pictureUrl} userName={userName} />
+          {account}
         </div>
       </div>
     </header>
   );
+}
+
+export function NavBar({ account }: { account: React.ReactNode }) {
+  return <NavBarInner account={account} pathname={usePathname()} />;
+}
+
+/**
+ * The header as the static shell ships it: "/" is the safe stand-in, since the only
+ * things pathname drives here are the active link highlight and whether the page supplies
+ * its own search box.
+ */
+export function NavBarFallback({ account }: { account: React.ReactNode }) {
+  return <NavBarInner account={account} pathname="/" />;
 }

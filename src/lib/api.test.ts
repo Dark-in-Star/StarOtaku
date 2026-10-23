@@ -119,6 +119,24 @@ describe("getAnime", () => {
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer session-token");
   });
 
+  // The Data Cache keys on URL + fetch options only, never on request headers, so a
+  // token-bearing response must never be cacheable or one visitor's my_list_status would
+  // be served to the next. The logged-out response carries no personal data and is cached.
+  it("caches the logged-out response but never a token-bearing one", async () => {
+    const anonFetch = mockFetchOnce({ id: 1, title: "Frieren" });
+    await getAnime(1);
+    const [, anonInit] = anonFetch.mock.calls[0] as [string, RequestInit];
+    expect(anonInit.cache).toBeUndefined();
+    expect((anonInit as { next?: { revalidate?: number } }).next?.revalidate).toBe(3600);
+
+    mockGetValidAccessToken.mockResolvedValue("session-token");
+    const authFetch = mockFetchOnce({ id: 1, title: "Frieren" });
+    await getAnime(1);
+    const [, authInit] = authFetch.mock.calls[0] as [string, RequestInit];
+    expect(authInit.cache).toBe("no-store");
+    expect((authInit as { next?: unknown }).next).toBeUndefined();
+  });
+
   it("throws an ApiError with status 404 for a missing anime", async () => {
     mockFetchOnce({ error: "not_found" }, { ok: false, status: 404 });
 

@@ -19,10 +19,9 @@ async function AnimeRankingRow({
   priority?: boolean;
 }) {
   const result = await getAnimeRanking(rankingType, 12);
-  console.log(result);
   return (
     <MediaRow title={title} viewAllHref={viewAllHref}>
-      {result.data.map(({ node, ranking },index) => (
+      {result.data.map(({ node, ranking }, index) => (
         <MediaRowItem key={node.id}>
           <MediaCard
             id={node.id}

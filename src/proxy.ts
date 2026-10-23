@@ -5,8 +5,13 @@ import { SESSION_COOKIE_NAME, sessionCookieOptions, type MalSession } from "@/li
 // Proxy (formerly "middleware") always runs on the Node.js runtime in Next.js 16,
 // so node:crypto usage in malAuth.ts works without extra configuration.
 
+// This runs only to refresh a near-expiry session cookie before the render that follows,
+// and every path reaching it bills a function invocation — so anything that can't carry a
+// refreshable session is excluded: build assets, `/api/reader/*` (immutable, CDN-held
+// images that must not be dragged back through a function on each hit), and any path whose
+// last segment has a file extension, which covers everything served from `public/`.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo.webp|brand.webp).*)"],
+  matcher: ["/((?!_next/static|_next/image|api/reader|icons/)(?!.*\\.\\w+$).*)"],
 };
 
 function parseSession(raw: string | undefined): MalSession | null {
