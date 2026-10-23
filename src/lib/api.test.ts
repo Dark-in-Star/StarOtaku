@@ -242,3 +242,65 @@ describe("getAnimeList pagination", () => {
     expect(result.data).toHaveLength(1);
   });
 });
+
+describe("a session whose token has expired", () => {
+  function mockFetchStatuses(responses: { status: number; body?: unknown }[]) {
+    const fetchMock = vi.fn();
+    for (const { status, body } of responses) {
+      fetchMock.mockResolvedValueOnce({
+        ok: status >= 200 && status < 300,
+        status,
+        json: () => Promise.resolve(body ?? {}),
+      });
+    }
+    global.fetch = fetchMock as unknown as typeof fetch;
+    return fetchMock;
+  }
+
+  function authHeaderOf(call: unknown[]): Record<string, string> {
+    return (call[1] as { headers: Record<string, string> }).headers;
+  }
+
+  it("retries a public ranking with the client ID instead of failing the page", async () => {
+    mockGetValidAccessToken.mockResolvedValue("expired-token");
+    const fetchMock = mockFetchStatuses([{ status: 401 }, { status: 200, body: { data: [] } }]);
+
+    // MAL 401s an expired bearer token even on endpoints that need no token at all, which
+    // took down every browse route for a visitor whose session had simply lapsed.
+    await expect(getAnimeRanking("all")).resolves.toEqual({ data: [] });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(authHeaderOf(fetchMock.mock.calls[0])).toHaveProperty("Authorization");
+    expect(authHeaderOf(fetchMock.mock.calls[1])).toHaveProperty("X-MAL-CLIENT-ID");
+  });
+
+  it("retries search and detail reads the same way", async () => {
+    mockGetValidAccessToken.mockResolvedValue("expired-token");
+
+    mockFetchStatuses([{ status: 401 }, { status: 200, body: { data: [] } }]);
+    await expect(searchAnime("naruto")).resolves.toEqual({ data: [] });
+
+    mockFetchStatuses([{ status: 401 }, { status: 200, body: { id: 1 } }]);
+    await expect(getAnime(1)).resolves.toEqual({ id: 1 });
+  });
+
+  it("never downgrades a personal list read to an anonymous one", async () => {
+    mockGetValidAccessToken.mockResolvedValue("expired-token");
+    const fetchMock = mockFetchStatuses([{ status: 401 }]);
+
+    // Retrying /users/@me/animelist without the token would ask MAL for "my" list as
+    // nobody — the visitor must be told to log in again instead.
+    await expect(getAnimeList()).rejects.toThrow(ApiError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("still surfaces a 401 that is not about an optional token", async () => {
+    mockGetValidAccessToken.mockResolvedValue(null);
+    const fetchMock = mockFetchStatuses([{ status: 401 }]);
+
+    // No token was attached, so a 401 here means the app's own client ID was rejected —
+    // a real misconfiguration that must not be retried into a loop or swallowed.
+    await expect(getAnimeRanking("all")).rejects.toThrow(ApiError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});

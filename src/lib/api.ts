@@ -68,6 +68,15 @@ interface FetchOptions {
   revalidate?: number | false;
   cache?: RequestCache;
   token?: string;
+  /**
+   * Marks `token` as a nice-to-have on an endpoint that also works unauthenticated.
+   *
+   * MAL answers an expired bearer token with a 401 even on its public endpoints rather
+   * than ignoring it and serving the anonymous response. These calls attach a token only
+   * to get `my_list_status` back, so a stale one must not fail the request — apiGet
+   * retries with the app's client ID instead.
+   */
+  optionalToken?: boolean;
 }
 
 // MAL's public endpoints (search, ranking, season, and detail without a caller
@@ -77,29 +86,39 @@ function authHeaders(token?: string): Record<string, string> {
 }
 
 async function apiGet<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { query, revalidate = 300, cache, token } = options;
+  const { query, revalidate = 300, cache, token, optionalToken = false } = options;
   const url = `${BASE_URL}${path}${buildQuery(query)}`;
 
-  // Next's Data Cache keys on URL + fetch options only — request headers, including the
-  // per-user Authorization one, are not part of the key. Since the list field sets ask for
-  // my_list_status, a token-bearing response is personal and must never land in the shared
-  // cache, or one visitor's list state would be served to the next.
-  const perUser = token !== undefined;
+  async function send(bearer: string | undefined): Promise<Response> {
+    // Next's Data Cache keys on URL + fetch options only — request headers, including the
+    // per-user Authorization one, are not part of the key. Since the list field sets ask for
+    // my_list_status, a token-bearing response is personal and must never land in the shared
+    // cache, or one visitor's list state would be served to the next.
+    const perUser = bearer !== undefined;
 
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      cache: perUser ? "no-store" : cache,
-      next: cache || perUser ? undefined : { revalidate },
-      headers: authHeaders(token),
-      // MAL's edge answers a throttled client with a 307 to /error.json, and that endpoint
-      // never responds — following it hangs the request until the timeout. The API itself
-      // never redirects, so any 3xx is the throttle.
-      redirect: "manual",
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-  } catch {
-    throw new ApiError(503, "Could not reach the MyAnimeList API.");
+    try {
+      return await fetch(url, {
+        cache: perUser ? "no-store" : cache,
+        next: cache || perUser ? undefined : { revalidate },
+        headers: authHeaders(bearer),
+        // MAL's edge answers a throttled client with a 307 to /error.json, and that endpoint
+        // never responds — following it hangs the request until the timeout. The API itself
+        // never redirects, so any 3xx is the throttle.
+        redirect: "manual",
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+    } catch {
+      throw new ApiError(503, "Could not reach the MyAnimeList API.");
+    }
+  }
+
+  let response = await send(token);
+
+  // A stale token must not take a public endpoint down with it: drop it and ask again as
+  // the app. Only the personal extras (my_list_status) are lost, which is what a visitor
+  // whose session just expired would see anyway.
+  if (response.status === 401 && optionalToken && token !== undefined) {
+    response = await send(undefined);
   }
 
   if ((response.status >= 300 && response.status < 400) || response.status === RATE_LIMITED_STATUS) {
@@ -176,6 +195,7 @@ export async function searchAnime(q: string, limit = 24, fields = ANIME_LIST_FIE
   return apiGet<MalListResponse<{ node: AnimeNode }>>("/anime", {
     query: { q: malSearchQuery(q), limit, offset, fields, nsfw: true },
     token,
+    optionalToken: true,
   });
 }
 
@@ -198,7 +218,7 @@ export async function getAnime(id: number, fields = ANIME_DETAIL_FIELDS) {
   // Data Cache for the logged-out majority, so every anonymous detail view re-hit MAL and
   // billed a full render. Anonymous responses now share a short-lived cache entry.
   const token = (await getValidAccessToken()) ?? undefined;
-  return apiGet<AnimeNode>(`/anime/${id}`, { query: { fields }, revalidate: 3600, token });
+  return apiGet<AnimeNode>(`/anime/${id}`, { query: { fields }, revalidate: 3600, token, optionalToken: true });
 }
 
 // Relations effectively never change once a title is on MAL, so this narrow field set is
@@ -219,6 +239,7 @@ export async function getAnimeRanking(rankingType: AnimeRankingType, limit = 24,
   return apiGet<MalListResponse<RankingNode<AnimeNode>>>("/anime/ranking", {
     query: { ranking_type: rankingType, limit, offset, fields, nsfw: true },
     token,
+    optionalToken: true,
   });
 }
 
@@ -234,6 +255,7 @@ export async function getSeasonalAnime(
   return apiGet<MalListResponse<{ node: AnimeNode }>>(`/anime/season/${year}/${season}`, {
     query: { sort, limit, offset, fields, nsfw: true },
     token,
+    optionalToken: true,
   });
 }
 
@@ -242,6 +264,7 @@ export async function searchManga(q: string, limit = 24, fields = MANGA_LIST_FIE
   return apiGet<MalListResponse<{ node: MangaNode }>>("/manga", {
     query: { q: malSearchQuery(q), limit, offset, fields, nsfw: true },
     token,
+    optionalToken: true,
   });
 }
 
@@ -252,7 +275,7 @@ export async function getMangaPublic(id: number, fields = MANGA_DETAIL_FIELDS) {
 
 export async function getManga(id: number, fields = MANGA_DETAIL_FIELDS) {
   const token = (await getValidAccessToken()) ?? undefined;
-  return apiGet<MangaNode>(`/manga/${id}`, { query: { fields }, revalidate: 3600, token });
+  return apiGet<MangaNode>(`/manga/${id}`, { query: { fields }, revalidate: 3600, token, optionalToken: true });
 }
 
 export async function getMangaRanking(rankingType: MangaRankingType, limit = 24, fields = MANGA_LIST_FIELDS, offset = 0) {
@@ -260,6 +283,7 @@ export async function getMangaRanking(rankingType: MangaRankingType, limit = 24,
   return apiGet<MalListResponse<RankingNode<MangaNode>>>("/manga/ranking", {
     query: { ranking_type: rankingType, limit, offset, fields, nsfw: true },
     token,
+    optionalToken: true,
   });
 }
 

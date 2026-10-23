@@ -65,12 +65,16 @@ export async function clearSession(): Promise<void> {
 /**
  * Returns a currently-valid access token, or null if the visitor isn't logged in.
  *
- * Normal page loads never hit the refresh branch here — middleware.ts proactively
- * refreshes near-expiry sessions before any Server Component renders. This is a
- * best-effort fallback for paths middleware doesn't cover (e.g. a Server Action
- * invoked right as a token expires): it refreshes inline and tries to persist the
- * new session, but since Server Components can't write cookies, that persistence
- * silently no-ops there — the caller still gets a valid token for this one request.
+ * This refresh is the only one there is: there is no middleware pre-refreshing sessions
+ * (an earlier version of this comment claimed otherwise). It refreshes inline and tries to
+ * persist the new session, but Server Components can't write cookies, so that persistence
+ * silently no-ops in a page render — the caller still gets a valid token for that one
+ * request, and the next render refreshes again until a Server Action or Route Handler
+ * writes the cookie back.
+ *
+ * Returning null here means "treat this visitor as logged out". Callers that attach the
+ * token opportunistically must pass `optionalToken` to apiGet, because MAL rejects an
+ * expired bearer token with a 401 even on endpoints that need no token at all.
  */
 export async function getValidAccessToken(): Promise<string | null> {
   const session = await getSession();
