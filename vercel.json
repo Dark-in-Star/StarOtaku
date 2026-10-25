@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "destination": "https://starotaku.darkinstarpro.workers.dev/:path*",
+      "permanent": true
+    }
+  ]
+}
