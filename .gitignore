@@ -54,3 +54,6 @@ next-env.d.ts
 android/keystore.properties
 keystore_details.txt
 free-port.bat
+/dist/
+.vinext/
+.cloudflare/
