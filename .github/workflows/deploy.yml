@@ -1,0 +1,46 @@
+name: Deploy to Cloudflare Workers
+
+# The Worker serves production; the Vercel account is blocked and vercel.json only
+# redirects to it. Nothing else publishes on push, so without this workflow `main` can be
+# green and correct while production still runs the previous build.
+on:
+  push:
+    branches: [main]
+  # Lets a failed or skipped run be retried without an empty commit.
+  workflow_dispatch:
+
+# A deploy promotes a version to 100% traffic, so overlapping runs could promote an older
+# build after a newer one. Queue them instead of cancelling: a superseded run that has
+# already uploaded should still finish promoting in order.
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          # Matches `packageManager` in package.json; `cache: pnpm` needs pnpm on PATH,
+          # hence the action-setup step above it.
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Gates the deploy on the same checks AGENTS.md asks for locally. Production is a
+      # fast-forward of dev with no PR, so this workflow is the only thing standing
+      # between a bad commit and the live site.
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      - run: pnpm deploy:vinext
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
