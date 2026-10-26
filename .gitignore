@@ -57,3 +57,6 @@ free-port.bat
 /dist/
 .vinext/
 .cloudflare/
+
+# wrangler local state
+.wrangler/
