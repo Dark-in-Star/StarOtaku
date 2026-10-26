@@ -171,7 +171,13 @@ async function getAniListParts(malId: number, revalidate: number): Promise<Parts
  */
 export async function getNextAiringEpisode(malId: number, revalidate = 300): Promise<NextAiringEpisode | null> {
   const lookup = await getAniListParts(malId, revalidate);
-  return lookup.status === "ok" ? combinedSchedule(lookup.parts) : null;
+  if (lookup.status !== "ok") {
+    // Logged because this is otherwise the quietest AniList path in the app: a countdown
+    // that never appears looks identical to a title that simply is not airing.
+    console.error("AniList schedule lookup failed", { malId, lookup });
+    return null;
+  }
+  return combinedSchedule(lookup.parts);
 }
 
 // One page holds 50 media; AniList caps perPage at 50. Callers with more ids than that
@@ -347,11 +353,17 @@ export async function getAnimeExtras(malId: number, revalidate = 3600): Promise<
     revalidate,
   );
 
-  if (!response?.ok) return null;
+  if (!response?.ok) {
+    console.error("AniList extras lookup failed", { malId, status: response?.status });
+    return null;
+  }
 
   const json = (await response.json()) as AniListExtrasResponse;
   const media = json.data?.Media;
-  if (!media) return null;
+  if (!media) {
+    console.error("AniList extras returned no media", { malId, errors: json.errors?.map((e) => e.message) });
+    return null;
+  }
 
   return {
     trailer: media.trailer?.site === "youtube" && media.trailer.id ? { id: media.trailer.id } : null,
