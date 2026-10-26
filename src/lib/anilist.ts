@@ -1,6 +1,7 @@
 import "server-only";
 import { type AniListPart, combinedSchedule, resolvePartEpisode, startKey } from "./anilistParts";
 import type { AnimeExtras, NextAiringEpisode } from "./types";
+import { base64ToString } from "./utils";
 
 const ANILIST_API_URL = "https://graphql.anilist.co";
 
@@ -12,6 +13,66 @@ const ANILIST_HEADERS = {
   Accept: "application/json",
   "User-Agent": "Starotaku/1.0 (+https://starotaku.vercel.app)",
 } as const;
+
+// AniList's 30 req/min budget is counted per egress IP, and a Worker egresses from an
+// address pool it shares with every other tenant — so the budget can already be spent
+// before this app sends anything, and the host is Cloudflare calling Cloudflare. The
+// reader used for the stream sources is no help here: it downgrades POST to GET, and
+// AniList answers that with `Use POST request to access graphql subdomain`. So this
+// fallback has to be a proxy that forwards the method and body intact.
+//
+// Base64 for the same reason as STREAM_READER_URL: it keeps a scrapeable upstream URL out
+// of plain sight in the deployment config. Unset means direct-only, which is correct for
+// local development and for any host whose own IP is not rate-limited into the ground.
+const ANILIST_PROXY_URL = base64ToString(process.env.ANILIST_PROXY_URL);
+
+const ANILIST_TIMEOUT_MS = 10_000;
+
+/**
+ * One transport for every AniList query. Direct first; on a rate-limit or block, retried
+ * once through the proxy, which egresses from an address AniList counts separately.
+ *
+ * Returns the `Response` rather than parsed JSON so each caller keeps its own body typing,
+ * and throws nothing — a caller that cannot reach AniList gets null and degrades, exactly
+ * as before.
+ */
+async function anilistFetch(body: string, revalidate: number): Promise<Response | null> {
+  const send = (url: string) =>
+    fetch(url, {
+      method: "POST",
+      headers: ANILIST_HEADERS,
+      body,
+      // AniList sends `no-store` on GraphQL responses, which would silently disable the
+      // Data Cache that `next.revalidate` asks for — the same trap documented in streams.ts.
+      cache: "force-cache",
+      next: { revalidate },
+      signal: AbortSignal.timeout(ANILIST_TIMEOUT_MS),
+    });
+
+  let direct: Response | null = null;
+  try {
+    direct = await send(ANILIST_API_URL);
+    if (direct.ok) return direct;
+  } catch (error) {
+    console.warn("AniList direct fetch failed", { error: String(error) });
+  }
+
+  // 429 is the shared-egress case; 403/503 is Cloudflare challenging the caller. Anything
+  // else is AniList answering for real (a bad query, say), so retrying through a different
+  // address would only burn the proxy's budget on the same rejection.
+  const worthRetrying = !direct || direct.status === 429 || direct.status === 403 || direct.status === 503;
+  if (!ANILIST_PROXY_URL || !worthRetrying) return direct;
+
+  try {
+    const proxied = await send(`${ANILIST_PROXY_URL}${ANILIST_API_URL}`);
+    if (proxied.ok) return proxied;
+    console.error("AniList proxy fallback rejected", { status: proxied.status });
+    return proxied;
+  } catch (error) {
+    console.error("AniList proxy fallback failed", { error: String(error) });
+    return direct;
+  }
+}
 
 // Every part, not `Media(idMal:)`: that returns just one of the AniList entries sharing a
 // MAL id, and which one is arbitrary — see `AniListPart`.
@@ -66,24 +127,37 @@ function toPart(media: AniListPartMedia): AniListPart {
 type PartsLookup =
   | { status: "ok"; parts: AniListPart[] }
   | { status: "unreachable"; error: unknown }
-  | { status: "failed"; httpStatus: number };
+  | { status: "failed"; httpStatus: number; retryAfter?: string; detail?: string };
 
 async function getAniListParts(malId: number, revalidate: number): Promise<PartsLookup> {
-  let response: Response;
-  try {
-    response = await fetch(ANILIST_API_URL, {
-      method: "POST",
-      headers: ANILIST_HEADERS,
-      body: JSON.stringify({ query: PARTS_QUERY, variables: { malId } }),
-      next: { revalidate },
-    });
-  } catch (error) {
-    return { status: "unreachable", error };
+  const response = await anilistFetch(
+    JSON.stringify({ query: PARTS_QUERY, variables: { malId } }),
+    revalidate,
+  );
+  if (!response) return { status: "unreachable", error: new Error("AniList could not be reached.") };
+
+  if (!response.ok) {
+    return {
+      status: "failed",
+      httpStatus: response.status,
+      // AniList rate-limits per egress IP. On a shared-egress host that budget is spent by
+      // other tenants too, so a 429 here is about the address, not this app's own traffic.
+      retryAfter: response.headers.get("retry-after") ?? undefined,
+      detail: (await response.text().catch(() => "")).slice(0, 200) || undefined,
+    };
   }
 
-  if (!response.ok) return { status: "failed", httpStatus: response.status };
-
   const json = (await response.json()) as AniListPartsResponse;
+  // A GraphQL error arrives as HTTP 200 with `data: null`, which would otherwise read as
+  // "this title has no parts" and reach the user as a missing source.
+  if (json.errors?.length) {
+    return {
+      status: "failed",
+      httpStatus: response.status,
+      detail: json.errors.map((error) => error.message).join("; ").slice(0, 200),
+    };
+  }
+
   return { status: "ok", parts: (json.data?.Page?.media ?? []).map(toPart) };
 }
 
@@ -126,22 +200,15 @@ const AIRING_SCHEDULES_QUERY = `
 async function fetchScheduleMedia(ids: number[], revalidate: number): Promise<AniListPartMedia[]> {
   const media: AniListPartMedia[] = [];
   for (let page = 1; ; page++) {
-    let response: Response;
-    try {
-      response = await fetch(ANILIST_API_URL, {
-        method: "POST",
-        headers: ANILIST_HEADERS,
-        body: JSON.stringify({
-          query: AIRING_SCHEDULES_QUERY,
-          variables: { malIds: ids, page, perPage: ANILIST_PAGE_SIZE },
-        }),
-        next: { revalidate },
-      });
-    } catch {
-      return media;
-    }
+    const response = await anilistFetch(
+      JSON.stringify({
+        query: AIRING_SCHEDULES_QUERY,
+        variables: { malIds: ids, page, perPage: ANILIST_PAGE_SIZE },
+      }),
+      revalidate,
+    );
 
-    if (!response.ok) return media;
+    if (!response?.ok) return media;
 
     const json = (await response.json()) as AniListPartsResponse;
     media.push(...(json.data?.Page?.media ?? []));
@@ -204,7 +271,12 @@ export async function resolveAniListEpisode(
     return null;
   }
   if (lookup.status === "failed") {
-    console.error("AniList id lookup failed", { malId, status: lookup.httpStatus });
+    console.error("AniList id lookup failed", {
+      malId,
+      status: lookup.httpStatus,
+      retryAfter: lookup.retryAfter,
+      detail: lookup.detail,
+    });
     return null;
   }
 
@@ -269,19 +341,12 @@ function personImage(person: AniListPerson): string | undefined {
 }
 
 export async function getAnimeExtras(malId: number, revalidate = 3600): Promise<AnimeExtras | null> {
-  let response: Response;
-  try {
-    response = await fetch(ANILIST_API_URL, {
-      method: "POST",
-      headers: ANILIST_HEADERS,
-      body: JSON.stringify({ query: ANIME_EXTRAS_QUERY, variables: { malId } }),
-      next: { revalidate },
-    });
-  } catch {
-    return null;
-  }
+  const response = await anilistFetch(
+    JSON.stringify({ query: ANIME_EXTRAS_QUERY, variables: { malId } }),
+    revalidate,
+  );
 
-  if (!response.ok) return null;
+  if (!response?.ok) return null;
 
   const json = (await response.json()) as AniListExtrasResponse;
   const media = json.data?.Media;
@@ -330,19 +395,11 @@ const MANGA_ID_QUERY = `
  * falls back to a stricter title match rather than failing.
  */
 export async function getAniListMangaId(malId: number, revalidate = 604_800): Promise<number | null> {
-  let response: Response;
-  try {
-    response = await fetch(ANILIST_API_URL, {
-      method: "POST",
-      headers: ANILIST_HEADERS,
-      body: JSON.stringify({ query: MANGA_ID_QUERY, variables: { malId } }),
-      next: { revalidate },
-      signal: AbortSignal.timeout(10_000),
-    });
-  } catch {
-    return null;
-  }
-  if (!response.ok) return null;
+  const response = await anilistFetch(
+    JSON.stringify({ query: MANGA_ID_QUERY, variables: { malId } }),
+    revalidate,
+  );
+  if (!response?.ok) return null;
   const json = (await response.json()) as { data?: { Media?: { id: number } | null } };
   return json.data?.Media?.id ?? null;
 }
