@@ -122,6 +122,22 @@ describe("resolveAniListEpisode transport", () => {
     );
   });
 
+  // workerd rejects `cache: "force-cache"` with `TypeError: Unsupported cache mode`, which
+  // aborts the request before it is sent — every AniList lookup failed on the deployed
+  // Worker while passing locally, because Node's fetch accepts the mode.
+  it("does not pass a cache mode workerd rejects", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(onePart));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const { resolveAniListEpisode } = await importAnilist();
+    await resolveAniListEpisode(60636, 1);
+
+    const init = fetchMock.mock.calls[0][1];
+    expect(init.cache).toBeUndefined();
+    // A positive revalidate is what makes the fetch cacheable instead.
+    expect(init.next.revalidate).toBeGreaterThan(0);
+  });
+
   it("returns null without throwing when both the direct call and the proxy fail", async () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error("fetch failed"));
     global.fetch = fetchMock as unknown as typeof fetch;

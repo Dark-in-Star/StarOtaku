@@ -154,8 +154,11 @@ describe("getStreamSources", () => {
 
     const init = fetchMock.mock.calls[1][1];
     expect(init.headers["User-Agent"]).toMatch(/Mozilla/);
-    // The origin sends `no-store`; without this Next refuses to populate the Data Cache.
-    expect(init.cache).toBe("force-cache");
+    // The origin sends `no-store`, and a positive revalidate is what overrides it. The
+    // `cache: "force-cache"` that used to sit here is rejected by workerd with
+    // `TypeError: Unsupported cache mode`, which killed every request on the Worker.
+    expect(init.cache).toBeUndefined();
+    expect(init.next.revalidate).toBeGreaterThan(0);
   });
 
   it("drops servers with an unrecognised audio track", async () => {

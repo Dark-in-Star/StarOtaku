@@ -42,9 +42,10 @@ async function anilistFetch(body: string, revalidate: number): Promise<Response 
       method: "POST",
       headers: ANILIST_HEADERS,
       body,
-      // AniList sends `no-store` on GraphQL responses, which would silently disable the
-      // Data Cache that `next.revalidate` asks for — the same trap documented in streams.ts.
-      cache: "force-cache",
+      // No `cache: "force-cache"` here: workerd rejects that mode outright with
+      // `TypeError: Unsupported cache mode: force-cache`, which aborts the request before
+      // it is sent. A positive `next.revalidate` already marks the fetch cacheable and
+      // overrides the origin's `no-store`, so the Data Cache engages without it.
       next: { revalidate },
       signal: AbortSignal.timeout(ANILIST_TIMEOUT_MS),
     });

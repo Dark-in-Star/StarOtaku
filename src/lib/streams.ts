@@ -61,9 +61,10 @@ function parseFlix(body: string): FlixResponse | null {
  * fall back to the reader instead of surfacing an error the fallback may well resolve.
  *
  * The origin answers with `Cache-Control: no-store, no-cache, must-revalidate`, and Next
- * refuses to populate the Data Cache for such a response, so `next: { revalidate }` alone
- * silently degrades to an uncached request on every call; `cache: "force-cache"` overrides
- * the origin header and restores the intended caching.
+ * refuses to populate the Data Cache for such a response. A positive `next.revalidate`
+ * marks the fetch cacheable and overrides that header on its own — `cache: "force-cache"`
+ * must NOT be added, because workerd rejects the mode with `TypeError: Unsupported cache
+ * mode: force-cache` and the request never leaves the Worker.
  */
 async function fetchFlixDirect(url: string, revalidate: number): Promise<FlixResponse | null> {
   try {
@@ -75,7 +76,6 @@ async function fetchFlixDirect(url: string, revalidate: number): Promise<FlixRes
         "User-Agent": FLIX_USER_AGENT,
         Referer: FLIX_REFERER,
       },
-      cache: "force-cache",
       next: { revalidate },
       signal: AbortSignal.timeout(FLIX_TIMEOUT_MS),
     });
@@ -105,7 +105,6 @@ async function fetchFlixViaReader(url: string, revalidate: number): Promise<Flix
   try {
     const response = await fetch(`${READER_PROXY_BASE_URL}${url}`, {
       headers: { Accept: "text/plain", "x-respond-with": "text" },
-      cache: "force-cache",
       next: { revalidate },
       signal: AbortSignal.timeout(READER_TIMEOUT_MS),
     });

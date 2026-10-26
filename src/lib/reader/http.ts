@@ -49,9 +49,8 @@ async function fetchDirect(url: string, options: SourceFetchOptions): Promise<Fe
   try {
     const response = await fetch(url, {
       headers: options.headers,
-      // Sources send no-store on HTML pages, which would silently disable the Data Cache
-      // `next.revalidate` asks for — the same trap documented in streams.ts.
-      cache: "force-cache",
+      // A positive revalidate is what marks this cacheable despite the source's no-store;
+      // `cache: "force-cache"` must not be added here — see streams.ts.
       next: { revalidate: options.revalidate },
       signal: AbortSignal.timeout(DIRECT_TIMEOUT_MS),
     });
@@ -75,7 +74,6 @@ async function fetchViaReader(url: string, options: SourceFetchOptions): Promise
   try {
     const response = await fetch(`${READER_PROXY_BASE_URL}${url}`, {
       headers: { Accept: "text/plain", "x-respond-with": options.readerFormat ?? "text", ...options.readerHeaders },
-      cache: "force-cache",
       next: { revalidate: options.revalidate },
       signal: AbortSignal.timeout(READER_TIMEOUT_MS),
     });
