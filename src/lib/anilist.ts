@@ -26,6 +26,11 @@ const ANILIST_HEADERS = {
 // local development and for any host whose own IP is not rate-limited into the ground.
 const ANILIST_PROXY_URL = base64ToString(process.env.ANILIST_PROXY_URL);
 
+// Optional, and only meaningful alongside the proxy: the proxy may require it to refuse
+// callers that are not this app. Plain text, since it is a bearer value the proxy
+// compares verbatim rather than a URL worth hiding.
+const ANILIST_PROXY_SECRET = process.env.ANILIST_PROXY_SECRET;
+
 const ANILIST_TIMEOUT_MS = 10_000;
 
 /**
@@ -37,10 +42,10 @@ const ANILIST_TIMEOUT_MS = 10_000;
  * as before.
  */
 async function anilistFetch(body: string, revalidate: number): Promise<Response | null> {
-  const send = (url: string) =>
+  const send = (url: string, extraHeaders?: Record<string, string>) =>
     fetch(url, {
       method: "POST",
-      headers: ANILIST_HEADERS,
+      headers: { ...ANILIST_HEADERS, ...extraHeaders },
       body,
       // No `cache: "force-cache"` here: workerd rejects that mode outright with
       // `TypeError: Unsupported cache mode: force-cache`, which aborts the request before
@@ -65,7 +70,13 @@ async function anilistFetch(body: string, revalidate: number): Promise<Response 
   if (!ANILIST_PROXY_URL || !worthRetrying) return direct;
 
   try {
-    const proxied = await send(`${ANILIST_PROXY_URL}${ANILIST_API_URL}`);
+    const proxied = await send(
+      `${ANILIST_PROXY_URL}${ANILIST_API_URL}`,
+      // Only sent to the proxy, never to AniList itself. Lets the proxy refuse callers
+      // that are not this app, so its egress reputation cannot be spent by a stranger
+      // who finds the URL.
+      ANILIST_PROXY_SECRET ? { "X-Proxy-Secret": ANILIST_PROXY_SECRET } : undefined,
+    );
     if (proxied.ok) return proxied;
     console.error("AniList proxy fallback rejected", { status: proxied.status });
     return proxied;

@@ -93,6 +93,24 @@ describe("resolveAniListEpisode transport", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  // The secret authenticates this app to the proxy; sending it to AniList would leak it
+  // to a third party that has no use for it.
+  it("sends the proxy secret to the proxy only", async () => {
+    process.env.ANILIST_PROXY_SECRET = "s3cret";
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({}, { ok: false, status: 403 }))
+      .mockResolvedValueOnce(jsonResponse(onePart));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const { resolveAniListEpisode } = await importAnilist();
+    await resolveAniListEpisode(60636, 1);
+
+    expect(fetchMock.mock.calls[0][1].headers["X-Proxy-Secret"]).toBeUndefined();
+    expect(fetchMock.mock.calls[1][1].headers["X-Proxy-Secret"]).toBe("s3cret");
+    delete process.env.ANILIST_PROXY_SECRET;
+  });
+
   it("forwards the POST body unchanged to the proxy", async () => {
     const fetchMock = vi
       .fn()
