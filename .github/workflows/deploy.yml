@@ -37,6 +37,13 @@ jobs:
       # Gates the deploy on the same checks AGENTS.md asks for locally. Production is a
       # fast-forward of dev with no PR, so this workflow is the only thing standing
       # between a bad commit and the live site.
+      #
+      # The build has to come first: `LayoutProps` and friends are generated into
+      # .next/types by the build, and both that directory and next-env.d.ts are
+      # gitignored. A clean checkout has neither, so typecheck alone fails on every
+      # layout with "Cannot find name 'LayoutProps'" — invisibly, since a local run
+      # always has the files sitting there from `next dev`.
+      - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test
 
