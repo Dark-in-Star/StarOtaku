@@ -32,22 +32,48 @@ Cloudflare-fronted and hit the same block (403/520/522).
 
 ## Deploying
 
-Any non-Cloudflare host works. Deno Deploy is the quickest:
+Any non-Cloudflare host works. Two builds of the same proxy live here:
+
+| File | Host | Quota resets |
+| --- | --- | --- |
+| `anilist-proxy.ts` | Deno Deploy, Fly.io | **monthly** (~1M req/mo on Deno's free plan) |
+| `anilist-proxy.valtown.ts` | Val Town | **daily** (100,000 runs/day, 1 min wall clock) |
+
+Prefer the Val Town build. Deno Deploy's free plan meters per *month*, so a quota that runs
+out on the 12th stays out until the 1st; Val Town meters per *day*, the same shape as the
+Worker's own 100k/day limit, so the worst case is hours rather than weeks. The proxy is
+only reached on a *failed direct* call (see `anilistFetch`), so in practice neither ceiling
+is approached — the Worker's own request limit binds first.
+
+### Val Town (recommended)
+
+1. https://www.val.town → **New val** → **HTTP**
+2. Paste `anilist-proxy.valtown.ts`, click **Save**
+3. In the val's **Environment variables**, add `SHARED_SECRET` set to any random string.
+   Treat this as required, not optional: new free vals are **public**, so the source and
+   URL are readable by anyone. The secret is read from env, never from the source, so a
+   public val exposes the mechanism but not the means to use it — and the upstream stays
+   hard-coded, so no caller can repoint it.
+4. Copy the deployment URL, e.g. `https://you-anilistproxy.web.val.run`
+
+### Deno Deploy
 
 1. https://dash.deno.com → **New Playground**
 2. Paste `anilist-proxy.ts`, click **Save & Deploy**
 3. Optional but recommended: add a `SHARED_SECRET` env var in the playground's settings
 4. Copy the deployment URL, e.g. `https://anilist-proxy-abc123.deno.dev`
 
-Then point the Worker at it. The app appends the AniList URL to this value, so **keep the
+### Pointing the Worker at it
+
+Identical for either host. The app appends the AniList URL to this value, so **keep the
 trailing slash**, and base64-encode it (same convention as `STREAM_READER_URL`):
 
 ```bash
-# base64 of "https://anilist-proxy-abc123.deno.dev/"
-echo -n 'https://anilist-proxy-abc123.deno.dev/' | base64
+# base64 of the proxy URL, trailing slash included
+echo -n 'https://you-anilistproxy.web.val.run/' | base64
 
 npx wrangler secret put ANILIST_PROXY_URL --name starotaku    # paste the base64
-npx wrangler secret put ANILIST_PROXY_SECRET --name starotaku # only if SHARED_SECRET was set
+npx wrangler secret put ANILIST_PROXY_SECRET --name starotaku # the SHARED_SECRET value
 ```
 
 `ANILIST_PROXY_SECRET` is sent as `X-Proxy-Secret` to the proxy only, never to AniList.
@@ -55,7 +81,8 @@ npx wrangler secret put ANILIST_PROXY_SECRET --name starotaku # only if SHARED_S
 ## Verifying
 
 ```bash
-curl -s -X POST https://anilist-proxy-abc123.deno.dev/ \
+curl -s -X POST https://you-anilistproxy.web.val.run/ \
+  -H 'X-Proxy-Secret: <the SHARED_SECRET value>' \
   -H 'Content-Type: application/json' \
   -d '{"query":"query { Page(perPage:1){ media(idMal:21, type:ANIME){ id nextAiringEpisode { episode } } } }"}'
 ```
