@@ -47,14 +47,19 @@ is approached — the Worker's own request limit binds first.
 
 ### Val Town (recommended)
 
-1. https://www.val.town → **New val** → **HTTP**
-2. Paste `anilist-proxy.valtown.ts`, click **Save**
+1. https://www.val.town → **New val** → **HTTP**. The trigger has to be HTTP: a Script val
+   never calls the exported handler, and answers every request with a 500 `"Not found"`.
+2. Paste `anilist-proxy.valtown.ts` into `main.ts`, click **Save**. Val Town deploys on
+   save; opening the `/code/` editor URL on its own deploys nothing.
 3. In the val's **Environment variables**, add `SHARED_SECRET` set to any random string.
    Treat this as required, not optional: new free vals are **public**, so the source and
    URL are readable by anyone. The secret is read from env, never from the source, so a
    public val exposes the mechanism but not the means to use it — and the upstream stays
    hard-coded, so no caller can repoint it.
-4. Copy the deployment URL, e.g. `https://you-anilistproxy.web.val.run`
+4. Copy the deployment URL with the file's **copy-URL** button — not the `www.val.town/x/...`
+   editor address, which is not callable. The endpoint is a separate host shaped
+   `https://<user>-<val>.web.val.run`, and the file id does not always match the val name,
+   so copy it rather than constructing it.
 
 ### Deno Deploy
 
@@ -89,6 +94,11 @@ curl -s -X POST https://you-anilistproxy.web.val.run/ \
 
 A working proxy returns `{"data":{"Page":{"media":[{"id":21,...}]}}}`. A 403 with the
 "principal's office" message means that host is blocked too — try a different provider.
+
+On Val Town two 500s look alike and mean different things: `"Val not found"` is the wrong
+hostname, while `"Not found"` means the val resolved but has no HTTP handler — an empty
+`main.ts` or a non-HTTP trigger. `Forbidden` means the proxy is working and `SHARED_SECRET`
+is set, so pass `X-Proxy-Secret` as above.
 
 Once the secret is set, this should stop being `{"schedule":null}`:
 
